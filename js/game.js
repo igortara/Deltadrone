@@ -8,7 +8,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 function initMap() {
     // This is the URL for MapTiler Satellite-v2.
     // **IMPORTANT: Replace 'YOUR_API_KEY_HERE' with your actual MapTiler API key!**
-    var maptilerSatelliteUrl = 'https://api.maptiler.com/maps/satellite-v2/{z}/{x}/{y}.jpg?key=YOUR_API_KEY_HERE';
+    var maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/?key=KblwSJyQeoJq77gnaqQx#1.0/0.00000/0.00000';
 
     L.tileLayer(maptilerSatelliteUrl, {
         // Attribution is crucial for compliance with MapTiler's terms of use.
