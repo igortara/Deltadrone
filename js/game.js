@@ -8,7 +8,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 function initMap() {
             // Убедитесь, что здесь используется правильный URL для MapTiler Satellite-v2 и ваш API-ключ
             // Ваш API-ключ: KblwSJyQeoJq77gnaqQx
-            var maptilerSatelliteUrl = 'https://api.maptiler.com/maps/satellite-v2/{z}/{x}/{y}.jpg?key=KblwSJyQeoJq77gnaqQx';
+            var maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=xpum0XQiGdzHO7iEg7wl';
 
             L.tileLayer(maptilerSatelliteUrl, {
                 attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
