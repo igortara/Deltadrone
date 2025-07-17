@@ -6,19 +6,17 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(mymap);
 
 function initMap() {
-    // This is the URL for MapTiler Satellite-v2.
-    // **IMPORTANT: Replace 'YOUR_API_KEY_HERE' with your actual MapTiler API key!**
-    var maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/?key=KblwSJyQeoJq77gnaqQx#1.0/0.00000/0.00000';
+            // Убедитесь, что здесь используется правильный URL для MapTiler Satellite-v2 и ваш API-ключ
+            // Ваш API-ключ: KblwSJyQeoJq77gnaqQx
+            var maptilerSatelliteUrl = 'https://api.maptiler.com/maps/satellite-v2/{z}/{x}/{y}.jpg?key=KblwSJyQeoJq77gnaqQx';
 
-    L.tileLayer(maptilerSatelliteUrl, {
-        // Attribution is crucial for compliance with MapTiler's terms of use.
-        // This typically includes MapTiler and OpenStreetMap contributors.
-        attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
-        maxZoom: 19 // satellite-v2 usually supports up to zoom 19
-        
-    }).addTo(mymap);
-    console.log("Map initialized with MapTiler Satellite-v2.");
-}
+            L.tileLayer(maptilerSatelliteUrl, {
+                attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+                maxZoom: 19 // Максимальный зум для спутниковых снимков
+            }).addTo(mymap);
+
+        }
+
 
 initMap();
 
