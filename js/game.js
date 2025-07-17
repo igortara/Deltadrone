@@ -5,13 +5,21 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(mymap);
 
-function initmap() {
-   var maptilerSatelliteUrl = 'https://api.maptiler.com/maps/satellite-v2/{z}/{x}/{y}.jpg?key=KblwSJyQeoJq77gnaqQx';
-   L.tileLayer(maptilerSatelliteUrl, {
-                attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
-                maxZoom: 19 
+function initMap() {
+    // This is the URL for MapTiler Satellite-v2.
+    // **IMPORTANT: Replace 'YOUR_API_KEY_HERE' with your actual MapTiler API key!**
+    var maptilerSatelliteUrl = 'https://api.maptiler.com/maps/satellite-v2/{z}/{x}/{y}.jpg?key=YOUR_API_KEY_HERE';
+
+    L.tileLayer(maptilerSatelliteUrl, {
+        // Attribution is crucial for compliance with MapTiler's terms of use.
+        // This typically includes MapTiler and OpenStreetMap contributors.
+        attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+        maxZoom: 19 // satellite-v2 usually supports up to zoom 19
     }).addTo(mymap);
 }
+
+initMap();
+
 // === Точка старта — Курск ===
 const kursk = [51.7306, 36.1939];
 const orel = [52.8915, 35.8594];
@@ -105,6 +113,6 @@ function spawnShahed() {
     flyDrone(posi, target);
 }
 // === Запуск первого Шахеда сразу и далее каждые 10 секунд ===
-initmap(); // Инициализация карты
+
 spawnShahed();
 setInterval(spawnShahed, 10000); // Запускать новый дрон каждые 10 секунд (10000 миллисекунд)
