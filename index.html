@@ -4,12 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deltadrone</title>
-    <meta name="description" content="Deltadrone - Гра про військову программу Delta">
+    <meta name="description" content="Deltadrone - Гра про військову програму Delta">
     <meta name="keywords" content="Deltadrone, гра, військова програма, Delta">
     <link rel="stylesheet" href="css/leaflet.css">
     <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        html, body {
+            height: 100%; /* HTML и Body должны занимать всю высоту */
+            margin: 0;   /* Убираем стандартные отступы */
+            padding: 0;  /* Убираем стандартные отступы */
+            overflow: hidden; /* Предотвращаем появление полос прокрутки */
+        }
+
+        /* Карта занимает 100% ширины и высоты родителя (body) */
+        #mapid {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-    
+    <div id="mapid"></div>
+
+    <script src="js/leaflet.js"></script>
+
+    <script src="js/game.js"></script>
 </body>
 </html>
