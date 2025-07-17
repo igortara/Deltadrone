@@ -112,7 +112,7 @@ function spawnShahed() {
     
     flyDrone(posi, target);
 }
-// === Запуск первого Шахеда сразу и далее каждые 10 секунд ===
+
 
 spawnShahed();
 setInterval(spawnShahed, 10000); // Запускать новый дрон каждые 10 секунд (10000 миллисекунд)
