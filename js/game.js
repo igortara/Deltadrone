@@ -15,7 +15,9 @@ function initMap() {
         // This typically includes MapTiler and OpenStreetMap contributors.
         attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
         maxZoom: 19 // satellite-v2 usually supports up to zoom 19
+        
     }).addTo(mymap);
+    console.log("Map initialized with MapTiler Satellite-v2.");
 }
 
 initMap();
