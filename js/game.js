@@ -174,7 +174,7 @@ fetch('https://raw.githubusercontent.com/datasets/geo-countries/main/data/countr
             }).addTo(mymap);
             console.log('Ukraine GeoJSON successfully added to map.');
             
-            spawnShahed(); // Запуск Шахеда
+            spawnShahed(); // Запуск Шахедаf
             setInterval(spawnShahed, 10000); // Запускать каждые 10 секунд
         } else {
             console.error('Ukraine GeoJSON could not be processed or found.');
