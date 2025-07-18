@@ -1,59 +1,70 @@
-// === Инициализация карты ===
-const mymap = L.map('mapid').setView([49, 32], 6); // Центр Украины
+// === Map Initialization ===
+const mymap = L.map('mapid').setView([49, 32], 6); // Center of Ukraine, zoom for the whole country
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(mymap);
 
-function initMap() {
-            // Убедитесь, что здесь используется правильный URL для MapTiler Satellite-v2 и ваш API-ключ
-            // Ваш API-ключ: KblwSJyQeoJq77gnaqQx
-            var maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=xpum0XQiGdzHO7iEg7wl';
+// Add MapTiler satellite layer
+const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=xpum0XQiGdzHO7iEg7wl';
+L.tileLayer(maptilerSatelliteUrl, {
+    attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+    maxZoom: 19
+}).addTo(mymap);
 
-            L.tileLayer(maptilerSatelliteUrl, {
-                attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
-                maxZoom: 19 // Максимальный зум для спутниковых снимков
-            }).addTo(mymap);
-
-        }
-
-
-initMap();
-
-// === Точка старта — Курск ===
+// === Starting Points - Kursk and Orel ===
 const kursk = [51.7306, 36.1939];
 const orel = [52.8915, 35.8594];
 
-// === Запасные границы Украины (упрощенно) ===
-const ukraineBounds = {
-    minLat: 44.38,
-    maxLat: 52.38,
-    minLng: 22.14,
-    maxLng: 40.23
-};
+// === Variable to store Ukraine's GeoJSON ===
+let ukraineGeoJson = null;
 
-// === Случайная точка в пределах запасных границ Украины ===
-function getRandomUkrainePoint() {
-    const lat = ukraineBounds.minLat + Math.random() * (ukraineBounds.maxLat - ukraineBounds.minLat);
-    const lng = ukraineBounds.minLng + Math.random() * (ukraineBounds.maxLng - ukraineBounds.minLng);
-    return [lat, lng];
+// === Function to get a random point within Ukraine's borders ===
+async function getRandomUkrainePoint() {
+    if (!ukraineGeoJson) {
+        console.warn("Ukraine's GeoJSON not loaded yet. Trying to get point later.");
+        return null;
+    }
+
+    let randomPoint = null;
+    let pointInUkraine = false;
+    let bounds = L.geoJSON(ukraineGeoJson).getBounds();
+
+    let attempts = 0;
+    const maxAttempts = 5000;
+
+    while (!pointInUkraine && attempts < maxAttempts) {
+        const lat = bounds.getSouth() + Math.random() * (bounds.getNorth() - bounds.getSouth());
+        const lng = bounds.getWest() + Math.random() * (bounds.getEast() - bounds.getWest());
+        
+        randomPoint = turf.point([lng, lat]); 
+        pointInUkraine = turf.booleanPointInPolygon(randomPoint, ukraineGeoJson);
+
+        attempts++;
+    }
+
+    if (pointInUkraine) {
+        return [randomPoint.geometry.coordinates[1], randomPoint.geometry.coordinates[0]];
+    } else {
+        console.error(`Failed to generate a point within Ukraine after ${maxAttempts} attempts.`);
+        return null;
+    }
 }
 
-// === Функция запуска БПЛА ===
+// === Drone Flight Function ===
 function flyDrone(from, to) {
     const droneIcon = L.divIcon({
         className: "drone-icon",
         html: `<img src="images/geran.png" width="32" height="32" />`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
+        iconSize: [16, 16],  
+        iconAnchor: [8, 8] 
     });
 
-    const marker = L.marker(from, { icon: droneIcon }).addTo(mymap);
-    
-    // Отображаем цель на карте
-    const targetMarker = L.marker(to).addTo(mymap).bindPopup("🎯 Ціль").openPopup();
+const marker = L.marker(from, { icon: droneIcon }).addTo(mymap);
+    const targetMarker = L.marker(to).addTo(mymap); // Без openPopup()
 
-    const speed = 0.0010; // шаг движения
+    const speed = 0.0010;
+    const maneuverStrength = 0.1; // Насколько сильно дрон будет отклоняться. Подберите значение.
 
     function move() {
         const lat = marker.getLatLng().lat;
@@ -65,23 +76,34 @@ function flyDrone(from, to) {
 
         if (dist < 0.01) {
             marker.setLatLng(to);
-            marker.bindPopup("💥 Вибух!").openPopup();
+            marker.bindPopup("💥 Explosion!").openPopup();
             
-            // Удаляем маркер дрона и маркер цели после взрыва
             setTimeout(() => {
                 mymap.removeLayer(marker);
-                mymap.removeLayer(targetMarker); // Удаляем маркер цели
+                mymap.removeLayer(targetMarker); 
             }, 1500);
             return;
         }
 
-        const normLat = dLat / dist;
-        const normLng = dLng / dist;
+        let normLat = dLat / dist;
+        let normLng = dLng / dist;
+
+
+        const randomLatDeviation = (Math.random() - 0.5) * maneuverStrength; // От -0.5*strength до +0.5*strength
+        const randomLngDeviation = (Math.random() - 0.5) * maneuverStrength;
+
+        normLat += randomLatDeviation;
+        normLng += randomLngDeviation;
+
+  
+        const newDist = Math.sqrt(normLat * normLat + normLng * normLng);
+        normLat /= newDist;
+        normLng /= newDist;
+        // --- Конец маневров ---
 
         marker.setLatLng([lat + normLat * speed, lng + normLng * speed]);
 
-        // Поворот по направлению
-        const angleRad = Math.atan2(dLng, dLat);
+        const angleRad = Math.atan2(dLng, dLat); 
         const angleDeg = angleRad * (180 / Math.PI);
         const img = marker.getElement()?.querySelector('img');
         if (img) img.style.transform = `rotate(${angleDeg}deg)`;
@@ -92,27 +114,72 @@ function flyDrone(from, to) {
     move();
 }
 
-// === Функция для спавна Шахеда ===
-function spawnShahed() {
-    const target = getRandomUkrainePoint();
-    let posi; // Оголошуємо posi як let, бо її значення буде змінюватися
+// === Shahed Spawn Function ===
+async function spawnShahed() { 
+    const target = await getRandomUkrainePoint(); 
+    if (!target) {
+        console.error("Failed to generate target in Ukraine. Skipping Shahed spawn.");
+        return;
+    }
 
-    // Генеруємо випадкове число 0 або 1
-    // Math.random() повертає число від 0 (включно) до 1 (не включно)
-    // Math.floor(Math.random() * 2) дасть 0 або 1
+    let startPosition; 
     let rand = Math.floor(Math.random() * 2);
 
-    if (rand === 0) { // Використовуємо === для порівняння
-        posi = kursk;
-        console.log(`Запущен Шахед из Курска в [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
-    } else { // Якщо rand не 0, то це 1
-        posi = orel;
-        console.log(`Запущен Шахед из Орла в [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
+    if (rand === 0) {
+        startPosition = kursk;
+        console.log(`Shahed launched from Kursk to [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
+    } else {
+        startPosition = orel;
+        console.log(`Shahed launched from Orel to [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
     }
     
-    flyDrone(posi, target);
+    flyDrone(startPosition, target);
 }
 
 
-spawnShahed();
-setInterval(spawnShahed, 10000); // Запускать новый дрон каждые 10 секунд (10000 миллисекунд)
+fetch('https://raw.githubusercontent.com/datasets/geo-countries/main/data/countries.geojson')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.type === "FeatureCollection" && data.features && data.features.length > 0) {
+            const foundUkraine = data.features.find(feature =>
+                feature.properties.name === 'Ukraine' || 
+                feature.properties.name_long === 'Ukraine' || 
+                feature.properties.iso_a2 === 'UA' ||     
+                feature.properties.iso_a3 === 'UKR'       
+            );
+
+            if (foundUkraine) {
+                ukraineGeoJson = foundUkraine;
+                 
+            }
+
+        } else if (data.type === "Feature" || data.type === "MultiPolygon" || data.type === "Polygon") {
+            ukraineGeoJson = data;
+        } 
+
+        if (ukraineGeoJson) {
+            L.geoJSON(ukraineGeoJson, {
+                style: {
+                    color: '#007bff0e', // Blue border
+                    weight: 2,
+                    opacity: 0.7,
+                    fillOpacity: 0.0090,
+                    fillColor: '#007bff'
+                }
+            }).addTo(mymap);
+            console.log('Ukraine GeoJSON successfully added to map.');
+            
+            spawnShahed(); // Запуск Шахеда
+            setInterval(spawnShahed, 10000); // Запускать каждые 10 секунд
+        } else {
+            console.error('Ukraine GeoJSON could not be processed or found.');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading or processing GeoJSON:', error);
+    });
