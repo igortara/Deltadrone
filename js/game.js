@@ -61,10 +61,10 @@ function flyDrone(from, to) {
     });
 
 const marker = L.marker(from, { icon: droneIcon }).addTo(mymap);
-    const targetMarker = L.marker(to).addTo(mymap); // Без openPopup()
+    const targetMarker = L.marker(to).addTo(mymap); 
 
     const speed = 0.0010;
-    const maneuverStrength = 0.1; // Насколько сильно дрон будет отклоняться. Подберите значение.
+    const maneuverStrength = 0.1; 
 
     function move() {
         const lat = marker.getLatLng().lat;
@@ -76,7 +76,7 @@ const marker = L.marker(from, { icon: droneIcon }).addTo(mymap);
 
         if (dist < 0.01) {
             marker.setLatLng(to);
-            marker.bindPopup("💥 Explosion!").openPopup();
+            marker.bindPopup("💥 Explosion!");
             
             setTimeout(() => {
                 mymap.removeLayer(marker);
