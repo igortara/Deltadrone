@@ -13,8 +13,13 @@ L.tileLayer(maptilerSatelliteUrl, {
 }).addTo(mymap);
 
 // === Starting Points - Kursk and Orel ===
+const Navla = [52.81163, 34.50643];
+const chatalovo = [54.3103, 32.4962];
+const gvardiyske = [45.11678, 33.97634]; // Gvardiyske, Crimea
+const chauda = [45.00529, 35.84238]; // Chauda, Crimea
 const kursk = [51.7306, 36.1939];
 const orel = [52.8915, 35.8594];
+const Millirovo = [48.8000, 39.5000]; // Millirovo, Rostov region
 
 // === Variable to store Ukraine's GeoJSON ===
 let ukraineGeoJson = null;
@@ -115,27 +120,45 @@ const marker = L.marker(from, { icon: droneIcon }).addTo(mymap);
 }
 
 // === Shahed Spawn Function ===
-async function spawnShahed() { 
-    const target = await getRandomUkrainePoint(); 
+async function spawnShahed() {
+    const target = await getRandomUkrainePoint();
     if (!target) {
         console.error("Failed to generate target in Ukraine. Skipping Shahed spawn.");
         return;
     }
 
-    let startPosition; 
-    let rand = Math.floor(Math.random() * 2);
+    let startPosition;
+    let rand = Math.floor(Math.random() * 8); // Changed to 7 to match number of locations
 
     if (rand === 0) {
         startPosition = kursk;
         console.log(`Shahed launched from Kursk to [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
-    } else {
+    } else if (rand === 1) {
         startPosition = orel;
         console.log(`Shahed launched from Orel to [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
+    } else if (rand === 2) {
+        startPosition = Navla;
+        console.log(`Shahed launched from Navla to [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
+    } else if (rand === 3) {
+        startPosition = chatalovo;
+        console.log(`Shahed launched from Chatalovo to [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
+    } else if (rand === 4) {
+        startPosition = gvardiyske;
+        console.log(`Shahed launched from Gvardiyske to [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
+    } else if (rand === 5) {
+        startPosition = chauda;
+        console.log(`Shahed launched from Chauda to [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
+    } else if (rand === 6) { // Corrected the index for the last location
+        startPosition = Millirovo;
+        console.log(`Shahed launched from Millirovo to [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
+    } else {
+        // Fallback or error handling if rand somehow goes beyond defined cases
+        console.error("Invalid random index generated for start position.");
+        return;
     }
-    
+
     flyDrone(startPosition, target);
 }
-
 
 fetch('https://raw.githubusercontent.com/datasets/geo-countries/main/data/countries.geojson')
     .then(response => {
