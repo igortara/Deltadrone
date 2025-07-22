@@ -1,5 +1,7 @@
 // === Map Initialization ===
+const randp = Math.random() * 10000 + 3000; // Случайная задержка от 5 до 15 секунд
 const mymap = L.map('mapid').setView([49, 32], 6); // Center of Ukraine, zoom for the whole country
+const activeDrones = []; 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors'
@@ -70,7 +72,7 @@ const marker = L.marker(from, { icon: droneIcon }).addTo(mymap);
 
     const speed = 0.0010;
     const maneuverStrength = 0.1; 
-
+    activeDrones.push(marker);
     function move() {
         const lat = marker.getLatLng().lat;
         const lng = marker.getLatLng().lng;
@@ -198,7 +200,9 @@ fetch('https://raw.githubusercontent.com/datasets/geo-countries/main/data/countr
             console.log('Ukraine GeoJSON successfully added to map.');
             
             spawnShahed(); // Запуск Шахедаf
-            setInterval(spawnShahed, 10000); // Запускать каждые 10 секунд
+            
+            setInterval(spawnShahed, randp); // Запускать каждые 10 секунд
+            console.log(`Shahed will spawn every ${randp.toFixed(0)} milliseconds.`);
         } else {
             console.error('Ukraine GeoJSON could not be processed or found.');
         }
