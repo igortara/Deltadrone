@@ -62,7 +62,7 @@ function launchDrone(from, to) {
     const targetMarker = L.marker(to).addTo(map);
 
     const speed = 0.0010;
-    const maneuverStrength = 0.02; // Lower value for smoother maneuvering
+    const maneuverStrength = 0.07; // Increase for more visible maneuvering
     let maneuverAngle = 0;
     activeDrones.push(marker);
 
@@ -85,8 +85,8 @@ function launchDrone(from, to) {
 
         let angle = Math.atan2(dLng, dLat);
 
-        // Smoother maneuvering: smaller random change, gradual return to main direction
-        maneuverAngle += ((Math.random() - 0.5) * maneuverStrength - maneuverAngle * 0.05);
+        // Add maneuvering: random smooth change to angle
+        maneuverAngle += (Math.random() - 0.5) * maneuverStrength;
         angle += maneuverAngle;
 
         let normLat = Math.cos(angle);
