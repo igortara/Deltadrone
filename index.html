@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,15 +25,122 @@
         .drone-icon {
             transform-origin: center center !important; 
         }
+        #side-panel {
+            position: absolute;
+            top: 20px;
+            right: 0;
+            width: 60px;
+            z-index: 1000;
+        }
+        #shop-btn {
+            width: 60px;
+            height: 60px;
+            background: #252B36;
+            color: #fff;
+            border: none;
+            border-radius: 10px 0 0 10px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        #shop-panel {
+            display: none;
+            position: absolute;
+            top: 0;
+            right: 60px;
+            width: 200px;
+            background: #252B36;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            border-radius: 10px 0 0 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            padding: 16px;
+        }
+        #shop-panel h3 {
+            margin-top: 0;
+        }
+        .shahed-count {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            z-index: 1000;
+        }
+        #shop-panel button {
+            display: block;
+            width: 100%;
+            background: #3a3f4b;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            
+            margin: 8px 0;
+            padding: 8px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
-    
     <div id="mapid"></div>
+    
+    <div id="side-panel">
+        <button id="shop-btn">Shop</button>
+        <span id="shahed-count" style="
+            display: block;
+            margin: 12px auto 0 auto;
+            width: 56px;
+            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #252B36;
+            color: #cfcfcf;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            padding: 6px 0;
+        ">0</span>
+        <div id="shop-panel">
+            <h3>Shop</h3>
+            <button id="buy-aa">Buy AA</button>
+            <button id="buy-drone">Buy Drone</button>
+            <button id="close-shop">Close</button>
+        </div>
+    </div>
 
     <script src="js/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
     <script src="js/game.js"></script>
+    <script>
+        const shopBtn = document.getElementById('shop-btn');
+        const shopPanel = document.getElementById('shop-panel');
+        const closeShop = document.getElementById('close-shop');
+
+        shopBtn.onclick = () => {
+            shopPanel.style.display = 'block';
+        };
+        closeShop.onclick = () => {
+            shopPanel.style.display = 'none';
+        };
+
+        // Example: connect AA buy button to AA spawn
+        document.getElementById('buy-aa').onclick = () => {
+            shopPanel.style.display = 'none';
+            if (window.enableAASpawn) enableAASpawn();
+        };
+        // Example: connect drone buy button to spawnShahed
+        document.getElementById('buy-drone').onclick = () => {
+            shopPanel.style.display = 'none';
+            if (window.spawnShahed) spawnShahed();
+        };
+
+        function updateShahedCount(count) {
+            // Например, элемент с id="shahed-count"
+            document.getElementById('shahed-count').textContent = count;
+        }
+    </script>
     
     
 </body>

@@ -49,7 +49,39 @@ async function getRandomPointInUkraine() {
     }
 }
 
-// === Drone Flight Function ===
+let dronesEnteredUkraine = 0;
+function tryShootDownDrone(droneMarker, ppoCircle) {
+    if (!droneMarker._ppoTargeting) {
+        droneMarker._ppoTargeting = true;
+        setTimeout(() => {
+            const dronePos = droneMarker.getLatLng();
+            const ppoPos = ppoCircle.getLatLng();
+            const dist = map.distance(dronePos, ppoPos);
+            if (dist <= ppoCircle.getRadius()) {
+                // 40% шанс сбить
+                if (Math.random() < 0.4) {
+                    showNotification({
+                        image: 'images/Pvo/mobile-group.png',
+                        title: 'Shahed shot down!',
+                        description: 'Air defense successfully intercepted the drone.',
+                        duration: 2500
+                    });
+                    map.removeLayer(droneMarker);
+                } else {
+                    // Не сбили, пробуем снова через 1 сек
+                    droneMarker._ppoTargeting = false;
+                    tryShootDownDrone(droneMarker, ppoCircle);
+                }
+            } else {
+                droneMarker._ppoTargeting = false;
+            }
+        }, 1200); // время наводки
+    }
+}
+function getDronesEnteredUkraine() {
+    return dronesEnteredUkraine;
+}
+
 function launchDrone(from, to) {
     const droneIcon = L.divIcon({
         className: "drone-icon",
@@ -62,8 +94,10 @@ function launchDrone(from, to) {
     const targetMarker = L.marker(to).addTo(map);
 
     const speed = 0.0010;
-    const maneuverStrength = 0.07; // Increase for more visible maneuvering
+    const maneuverStrength = 0.06;
     let maneuverAngle = 0;
+    let enteredUkraine = false;
+    let finished = false;
     activeDrones.push(marker);
 
     function move() {
@@ -72,8 +106,41 @@ function launchDrone(from, to) {
         const dLat = to[0] - lat;
         const dLng = to[1] - lng;
         const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+        map.eachLayer(layer => {
+        if (layer instanceof L.Circle && layer.options.color === '#ff0000ab') {
+            tryShootDownDrone(marker, layer);
+        }
+        });
+        const isInUkraine = turf.booleanPointInPolygon(turf.point([lng, lat]), ukraineGeoJson);
 
-        if (dist < 0.01) {
+        // Check if drone entered Ukraine
+        if (!enteredUkraine && isInUkraine) {
+            enteredUkraine = true;
+            dronesEnteredUkraine++;
+            if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
+            showNotification({
+                image: 'images/geran.png',
+                title: 'Shahed entered Ukraine',
+                description: 'A drone has crossed the border.',
+                duration: 3000
+            });
+        }
+
+        // Stop drone if it tries to leave Ukraine after entering
+        if (enteredUkraine && !isInUkraine) {
+            marker.bindPopup("🛑 Drone stopped at border!");
+            setTimeout(() => {
+                map.removeLayer(marker);
+                map.removeLayer(targetMarker);
+            }, 1500);
+            return;
+        }
+
+        // When drone reaches the target, decrease the counter
+        if (dist < 0.01 && enteredUkraine && !finished) {
+            finished = true;
+            dronesEnteredUkraine--;
+            if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
             marker.setLatLng(to);
             marker.bindPopup("💥 Explosion!");
             setTimeout(() => {
@@ -85,9 +152,11 @@ function launchDrone(from, to) {
 
         let angle = Math.atan2(dLng, dLat);
 
-        // Add maneuvering: random smooth change to angle
-        maneuverAngle += (Math.random() - 0.5) * maneuverStrength;
-        angle += maneuverAngle;
+        // Maneuver only inside Ukraine
+        if (isInUkraine) {
+            maneuverAngle += (Math.random() - 0.5) * maneuverStrength;
+            angle += maneuverAngle;
+        }
 
         let normLat = Math.cos(angle);
         let normLng = Math.sin(angle);
@@ -151,3 +220,122 @@ fetch('https://raw.githubusercontent.com/datasets/geo-countries/main/data/countr
     .catch(error => {
         console.error('Error loading or processing GeoJSON:', error);
     });
+
+function showNotification({ image = '', title = '', description = '', duration = 3000 }) {
+    let container = document.getElementById('notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        container.style.position = 'fixed';
+        container.style.top = '18px';
+        container.style.left = '50%';
+        container.style.transform = 'translateX(-50%)';
+        container.style.zIndex = '3000';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '14px';
+        container.style.pointerEvents = 'none';
+        container.style.width = '100%';
+        container.style.maxWidth = '400px';
+        document.body.appendChild(container);
+    }
+
+    const notification = document.createElement('div');
+    notification.style.display = 'flex';
+    notification.style.alignItems = 'center';
+    notification.style.background = 'rgba(37,43,54,0.97)';
+    notification.style.borderRadius = '16px';
+    notification.style.boxShadow = '0 4px 16px rgba(0,0,0,0.13)';
+    notification.style.padding = '14px 18px 14px 12px';
+    notification.style.margin = '0 auto';
+    notification.style.minWidth = '180px';
+    notification.style.maxWidth = '96vw';
+    notification.style.opacity = '0';
+    notification.style.transition = 'opacity 0.35s, transform 0.35s';
+    notification.style.transform = 'translateY(-24px)';
+    notification.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+    notification.style.border = '1.5px solid #2e3440';
+
+    if (image) {
+        const img = document.createElement('img');
+        img.src = image;
+        img.style.width = '44px';
+        img.style.height = '44px';
+        img.style.borderRadius = '12px';
+        img.style.objectFit = 'cover';
+        img.style.marginRight = '12px';
+        img.style.boxShadow = '0 2px 8px rgba(0,0,0,0.10)';
+        notification.appendChild(img);
+    }
+
+    const textBlock = document.createElement('div');
+    textBlock.style.display = 'flex';
+    textBlock.style.flexDirection = 'column';
+    textBlock.style.justifyContent = 'center';
+
+    if (title) {
+        const titleElem = document.createElement('div');
+        titleElem.textContent = title;
+        titleElem.style.fontWeight = '600';
+        titleElem.style.color = '#fff';
+        titleElem.style.fontSize = '16px';
+        titleElem.style.marginBottom = '3px';
+        titleElem.style.letterSpacing = '0.02em';
+        titleElem.style.wordBreak = 'break-word';
+        textBlock.appendChild(titleElem);
+    }
+    if (description) {
+        const descElem = document.createElement('div');
+        descElem.textContent = description;
+        descElem.style.fontSize = '14px';
+        descElem.style.color = '#bfc4d1';
+        descElem.style.lineHeight = '1.3';
+        descElem.style.wordBreak = 'break-word';
+        textBlock.appendChild(descElem);
+    }
+
+    notification.appendChild(textBlock);
+    container.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateY(0)';
+    }, 60);
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(-24px)';
+        setTimeout(() => {
+            notification.remove();
+        }, 350);
+    }, duration);
+}
+
+function spawnPPO(Cordinate){
+    const simpleppoIcon = L.divIcon({
+        className: "ppo-icon",
+        html: `<img src="images/Pvo/mobile-group.png" width="32" height="32" alt="Mobile air defense group vehicle positioned for deployment on a map, surrounded by a digital mapping interface. No visible text. Neutral and functional tone." />`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+    const marker = L.marker(Cordinate, { icon: simpleppoIcon }).addTo(map); 
+    const circle = L.circle(Cordinate, {
+        color: '#ff0000ab',
+        fillColor: '#ff000004',
+        fillOpacity: 0.001,
+
+        radius: 2500
+    }).addTo(map);
+    marker.bindPopup("PPO deployed!").openPopup();
+}
+
+
+// Example usage of spawnPPO function
+spawnPPO([49.0, 32.0]);
+// Example usage of showNotification function
+//showNotification({
+//    image: 'images/geran.png',
+//    title: 'Shahed entered Ukraine',
+//     description: 'A drone has crossed the border.',
+//     duration: 3000
+// });
