@@ -236,10 +236,38 @@ function launchDrone(from, to) {
     move();
 }
 
-// === Функция для спавна шахеда в случайную точку Украины ===
+// === Массив городов-целей ===
+const TARGET_CITIES = [
+    { name: "Kyiv", coords: [50.4501, 30.5234], radius: 12000 },
+    { name: "Starokonstantinov", coords: [49.7556, 27.2061], radius: 8000 },
+    { name: "Dnipro", coords: [48.4647, 35.0462], radius: 10000 }
+    // Добавляйте новые города сюда
+];
+
+// === Отрисовка кругов целей на карте ===
+TARGET_CITIES.forEach(city => {
+    L.circle(city.coords, {
+        color: '#00ff0009',
+        fillColor: '#00ff0044',
+        fillOpacity: 0.18,
+        radius: city.radius
+    }).addTo(map).bindPopup(city.name);
+});
+
+// === Получить случайную точку внутри круга города ===
+function getRandomPointInCity(city) {
+    const R = city.radius / 111320; // радиус в градусах (примерно)
+    const angle = Math.random() * 2 * Math.PI;
+    const dist = Math.sqrt(Math.random()) * R;
+    const lat = city.coords[0] + dist * Math.cos(angle);
+    const lng = city.coords[1] + dist * Math.sin(angle);
+    return [lat, lng];
+}
+
+// === Функция для спавна шахеда в случайный город ===
 async function spawnShahed() {
-    const target = await getRandomPointInUkraine();
-    if (!target) return;
+    const city = TARGET_CITIES[Math.floor(Math.random() * TARGET_CITIES.length)];
+    const target = getRandomPointInCity(city);
     const index = Math.floor(Math.random() * launchPoints.length);
     const start = launchPoints[index];
     launchDrone(start.coords, target);
