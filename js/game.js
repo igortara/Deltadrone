@@ -1,7 +1,5 @@
-// === Map Initialization ===
-const spawnInterval = Math.random() * 10000 + 3000;
+// === Карта и слои ===
 const map = L.map('mapid').setView([49, 32], 6);
-const activeDrones = [];
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors'
@@ -13,7 +11,7 @@ L.tileLayer(maptilerSatelliteUrl, {
     maxZoom: 19
 }).addTo(map);
 
-// === Starting Points - Kursk and Orel ===
+// === Точки запуска шахедов ===
 const launchPoints = [
     { name: "Kursk", coords: [51.7306, 36.1939] },
     { name: "Orel", coords: [52.8915, 35.8594] },
@@ -24,10 +22,12 @@ const launchPoints = [
     { name: "Millerovo", coords: [48.8000, 39.5000] }
 ];
 
-// === Variable to store Ukraine's GeoJSON ===
+// === Переменные для Украины и шахедов ===
 let ukraineGeoJson = null;
+let dronesEnteredUkraine = 0;
+const activeDrones = [];
 
-// === Function to get a random point within Ukraine's borders ===
+// === Получить случайную точку в Украине ===
 async function getRandomPointInUkraine() {
     if (!ukraineGeoJson) return null;
     let randomPoint = null;
@@ -49,178 +49,7 @@ async function getRandomPointInUkraine() {
     }
 }
 
-let dronesEnteredUkraine = 0;
-function tryShootDownDrone(droneMarker, ppoCircle) {
-    if (!droneMarker._ppoTargeting) {
-        droneMarker._ppoTargeting = true;
-        setTimeout(() => {
-            const dronePos = droneMarker.getLatLng();
-            const ppoPos = ppoCircle.getLatLng();
-            const dist = map.distance(dronePos, ppoPos);
-            if (dist <= ppoCircle.getRadius()) {
-                // 40% шанс сбить
-                if (Math.random() < 0.4) {
-                    showNotification({
-                        image: 'images/Pvo/mobile-group.png',
-                        title: 'Shahed shot down!',
-                        description: 'Air defense successfully intercepted the drone.',
-                        duration: 2500
-                    });
-                    map.removeLayer(droneMarker);
-                } else {
-                    // Не сбили, пробуем снова через 1 сек
-                    droneMarker._ppoTargeting = false;
-                    tryShootDownDrone(droneMarker, ppoCircle);
-                }
-            } else {
-                droneMarker._ppoTargeting = false;
-            }
-        }, 1200); // время наводки
-    }
-}
-function getDronesEnteredUkraine() {
-    return dronesEnteredUkraine;
-}
-
-function launchDrone(from, to) {
-    const droneIcon = L.divIcon({
-        className: "drone-icon",
-        html: `<img src="images/geran.png" width="32" height="32" />`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
-    });
-
-    const marker = L.marker(from, { icon: droneIcon }).addTo(map);
-    const targetMarker = L.marker(to).addTo(map);
-
-    const speed = 0.0010;
-    const maneuverStrength = 0.06;
-    let maneuverAngle = 0;
-    let enteredUkraine = false;
-    let finished = false;
-    activeDrones.push(marker);
-
-    function move() {
-        const lat = marker.getLatLng().lat;
-        const lng = marker.getLatLng().lng;
-        const dLat = to[0] - lat;
-        const dLng = to[1] - lng;
-        const dist = Math.sqrt(dLat * dLat + dLng * dLng);
-        map.eachLayer(layer => {
-        if (layer instanceof L.Circle && layer.options.color === '#ff0000ab') {
-            tryShootDownDrone(marker, layer);
-        }
-        });
-        const isInUkraine = turf.booleanPointInPolygon(turf.point([lng, lat]), ukraineGeoJson);
-
-        // Check if drone entered Ukraine
-        if (!enteredUkraine && isInUkraine) {
-            enteredUkraine = true;
-            dronesEnteredUkraine++;
-            if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
-            showNotification({
-                image: 'images/geran.png',
-                title: 'Shahed entered Ukraine',
-                description: 'A drone has crossed the border.',
-                duration: 3000
-            });
-        }
-
-        // Stop drone if it tries to leave Ukraine after entering
-        if (enteredUkraine && !isInUkraine) {
-            marker.bindPopup("🛑 Drone stopped at border!");
-            setTimeout(() => {
-                map.removeLayer(marker);
-                map.removeLayer(targetMarker);
-            }, 1500);
-            return;
-        }
-
-        // When drone reaches the target, decrease the counter
-        if (dist < 0.01 && enteredUkraine && !finished) {
-            finished = true;
-            dronesEnteredUkraine--;
-            if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
-            marker.setLatLng(to);
-            marker.bindPopup("💥 Explosion!");
-            setTimeout(() => {
-                map.removeLayer(marker);
-                map.removeLayer(targetMarker);
-            }, 1500);
-            return;
-        }
-
-        let angle = Math.atan2(dLng, dLat);
-
-        // Maneuver only inside Ukraine
-        if (isInUkraine) {
-            maneuverAngle += (Math.random() - 0.5) * maneuverStrength;
-            angle += maneuverAngle;
-        }
-
-        let normLat = Math.cos(angle);
-        let normLng = Math.sin(angle);
-
-        marker.setLatLng([lat + normLat * speed, lng + normLng * speed]);
-
-        const angleDeg = angle * (180 / Math.PI);
-        const img = marker.getElement()?.querySelector('img');
-        if (img) img.style.transform = `rotate(${angleDeg}deg)`;
-
-        requestAnimationFrame(move);
-    }
-
-    move();
-}
-
-// === Shahed Spawn Function ===
-async function spawnShahed() {
-    const target = await getRandomPointInUkraine();
-    if (!target) return;
-
-    const index = Math.floor(Math.random() * launchPoints.length);
-    const start = launchPoints[index];
-    console.log(`Shahed launched from ${start.name} to point [${target[0].toFixed(4)}, ${target[1].toFixed(4)}]`);
-
-    launchDrone(start.coords, target);
-}
-
-fetch('https://raw.githubusercontent.com/datasets/geo-countries/main/data/countries.geojson')
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-        return response.json();
-    })
-    .then(data => {
-        if (data.type === "FeatureCollection" && data.features && data.features.length > 0) {
-            const foundUkraine = data.features.find(feature =>
-                feature.properties.name === 'Ukraine' ||
-                feature.properties.name_long === 'Ukraine' ||
-                feature.properties.iso_a2 === 'UA' ||
-                feature.properties.iso_a3 === 'UKR'
-            );
-            if (foundUkraine) ukraineGeoJson = foundUkraine;
-        } else if (data.type === "Feature" || data.type === "MultiPolygon" || data.type === "Polygon") {
-            ukraineGeoJson = data;
-        }
-        if (ukraineGeoJson) {
-            L.geoJSON(ukraineGeoJson, {
-                style: {
-                    color: '#007bff0e',
-                    weight: 2,
-                    opacity: 0.7,
-                    fillOpacity: 0.0090,
-                    fillColor: '#007bff'
-                }
-            }).addTo(map);
-            spawnShahed();
-            setInterval(spawnShahed, spawnInterval);
-            console.log(`Shahed will be launched every ${spawnInterval.toFixed(0)} milliseconds.`);
-        }
-    })
-    .catch(error => {
-        console.error('Error loading or processing GeoJSON:', error);
-    });
-
+// === Функция для отображения уведомлений ===
 function showNotification({ image = '', title = '', description = '', duration = 3000 }) {
     let container = document.getElementById('notification-container');
     if (!container) {
@@ -311,31 +140,229 @@ function showNotification({ image = '', title = '', description = '', duration =
     }, duration);
 }
 
-function spawnPPO(Cordinate){
-    const simpleppoIcon = L.divIcon({
-        className: "ppo-icon",
-        html: `<img src="images/Pvo/mobile-group.png" width="32" height="32" alt="Mobile air defense group vehicle positioned for deployment on a map, surrounded by a digital mapping interface. No visible text. Neutral and functional tone." />`,
+// === Функция спавна шахеда ===
+function launchDrone(from, to) {
+    const droneIcon = L.divIcon({
+        className: "drone-icon",
+        html: `<img src="images/geran.png" width="32" height="32" />`,
         iconSize: [16, 16],
         iconAnchor: [8, 8]
     });
-    const marker = L.marker(Cordinate, { icon: simpleppoIcon }).addTo(map); 
-    const circle = L.circle(Cordinate, {
-        color: '#ff0000ab',
-        fillColor: '#ff000004',
-        fillOpacity: 0.001,
 
-        radius: 2500
-    }).addTo(map);
-    marker.bindPopup("PPO deployed!").openPopup();
+    const marker = L.marker(from, { icon: droneIcon }).addTo(map);
+    const targetMarker = L.marker(to).addTo(map);
+
+    const speed = 0.0010;
+    const maneuverStrength = 0.06;
+    let maneuverAngle = 0;
+    let enteredUkraine = false;
+    let finished = false;
+    activeDrones.push(marker);
+
+    function move() {
+        if (!marker._map) return;
+        const lat = marker.getLatLng().lat;
+        const lng = marker.getLatLng().lng;
+        const dLat = to[0] - lat;
+        const dLng = to[1] - lng;
+        const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+
+        // Проверка на ПВО
+        map.eachLayer(layer => {
+            if (layer instanceof L.Circle && layer.options.color === '#ff0000ab') {
+                tryShootDownDrone(marker, layer);
+            }
+        });
+
+        const isInUkraine = turf.booleanPointInPolygon(turf.point([lng, lat]), ukraineGeoJson);
+
+        // Вход в Украину
+        if (!enteredUkraine && isInUkraine) {
+            enteredUkraine = true;
+            dronesEnteredUkraine++;
+            if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
+            showNotification({
+                image: 'images/geran.png',
+                title: 'Shahed entered Ukraine',
+                description: 'A drone has crossed the border.',
+                duration: 3000
+            });
+        }
+
+        // Остановка на границе
+        if (enteredUkraine && !isInUkraine) {
+            marker.bindPopup("🛑 Drone stopped at border!");
+            setTimeout(() => {
+                map.removeLayer(marker);
+                map.removeLayer(targetMarker);
+            }, 1500);
+            return;
+        }
+
+        // Прилет к цели
+        if (dist < 0.01 && enteredUkraine && !finished) {
+            finished = true;
+            dronesEnteredUkraine--;
+            if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
+            marker.setLatLng(to);
+            marker.bindPopup("💥 Explosion!");
+            setTimeout(() => {
+                map.removeLayer(marker);
+                map.removeLayer(targetMarker);
+            }, 1500);
+            return;
+        }
+
+        let angle = Math.atan2(dLng, dLat);
+
+        // Маневр только в Украине
+        if (isInUkraine) {
+            maneuverAngle += (Math.random() - 0.5) * maneuverStrength;
+            angle += maneuverAngle;
+        }
+
+        let normLat = Math.cos(angle);
+        let normLng = Math.sin(angle);
+
+        marker.setLatLng([lat + normLat * speed, lng + normLng * speed]);
+
+        const angleDeg = angle * (180 / Math.PI);
+        const img = marker.getElement()?.querySelector('img');
+        if (img) img.style.transform = `rotate(${angleDeg}deg)`;
+
+        requestAnimationFrame(move);
+    }
+
+    move();
 }
 
+// === Функция для спавна шахеда в случайную точку Украины ===
+async function spawnShahed() {
+    const target = await getRandomPointInUkraine();
+    if (!target) return;
+    const index = Math.floor(Math.random() * launchPoints.length);
+    const start = launchPoints[index];
+    launchDrone(start.coords, target);
+}
 
-// Example usage of spawnPPO function
-spawnPPO([49.0, 32.0]);
-// Example usage of showNotification function
-//showNotification({
-//    image: 'images/geran.png',
-//    title: 'Shahed entered Ukraine',
-//     description: 'A drone has crossed the border.',
-//     duration: 3000
-// });
+// === Массив типов ПВО ===
+const PPO_LIST = [
+    { name: "Mobile Group", image: "images/Pvo/mobile-group.png", radius: 25000 },
+    { name: "S-300", image: "images/Pvo/s300.png", radius: 4000 },
+    { name: "Buk-M1", image: "images/Pvo/buk.png", radius: 3000 }
+    // Добавляйте новые типы ПВО сюда
+];
+
+// === Функция спавна ПВО по названию и координатам ===
+function spawnPPO(name, coords) {
+    const ppo = PPO_LIST.find(item => item.name.toLowerCase() === name.toLowerCase());
+    if (!ppo) {
+        console.warn(`PPO "${name}" not found in PPO_LIST`);
+        return;
+    }
+    const icon = L.divIcon({
+        className: "ppo-icon",
+        html: `<img src="${ppo.image}" width="32" height="32" alt="${ppo.name}" />`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+    const marker = L.marker(coords, { icon: icon }).addTo(map);
+    const circle = L.circle(coords, {
+        color: '#ff0000ab',
+        fillColor: '#ff000004',
+        fillOpacity: 0.15,
+        radius: ppo.radius
+    }).addTo(map);
+    circle._ppoType = ppo; // <-- Сохраняем тип ПВО в объекте круга!
+    marker.bindPopup(`${ppo.name} deployed!`).openPopup();
+}
+
+// В функции tryShootDownDrone используйте тип ПВО из круга:
+function tryShootDownDrone(droneMarker, ppoCircle) {
+    if (!droneMarker._ppoTargeting && droneMarker._map) { // проверяем, что дрон ещё на карте
+        droneMarker._ppoTargeting = true;
+        setTimeout(() => {
+            if (!droneMarker._map) return; // если дрон уже удалён, ничего не делаем
+            const dronePos = droneMarker.getLatLng();
+            const ppoPos = ppoCircle.getLatLng();
+            const dist = map.distance(dronePos, ppoPos);
+            if (dist <= ppoCircle.getRadius()) {
+                if (Math.random() < 0.7) {
+                    const ppoType = ppoCircle._ppoType || { image: 'images/Pvo/mobile-group.png', name: 'Air Defense' };
+                    showNotification({
+                        image: ppoType.image,
+                        title: `${ppoType.name} shot down Shahed!`,
+                        description: 'Air defense successfully intercepted the drone.',
+                        duration: 2500
+                    });
+                    map.removeLayer(droneMarker);
+                } else {
+                    droneMarker._ppoTargeting = false;
+                    tryShootDownDrone(droneMarker, ppoCircle);
+                }
+            } else {
+                droneMarker._ppoTargeting = false;
+            }
+        }, 1000); // время наводки
+    }
+}
+
+// === Получить количество шахедов в Украине ===
+function getDronesEnteredUkraine() {
+    return dronesEnteredUkraine;
+}
+
+// === Загрузка границ Украины и запуск шахедов ===
+fetch('https://raw.githubusercontent.com/datasets/geo-countries/main/data/countries.geojson')
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+        return response.json();
+    })
+    .then(data => {
+        if (data.type === "FeatureCollection" && data.features && data.features.length > 0) {
+            const foundUkraine = data.features.find(feature =>
+                feature.properties.name === 'Ukraine' ||
+                feature.properties.name_long === 'Ukraine' ||
+                feature.properties.iso_a2 === 'UA' ||
+                feature.properties.iso_a3 === 'UKR'
+            );
+            if (foundUkraine) ukraineGeoJson = foundUkraine;
+        } else if (data.type === "Feature" || data.type === "MultiPolygon" || data.type === "Polygon") {
+            ukraineGeoJson = data;
+        }
+        if (ukraineGeoJson) {
+            L.geoJSON(ukraineGeoJson, {
+                style: {
+                    color: '#007bff0e',
+                    weight: 2,
+                    opacity: 0.7,
+                    fillOpacity: 0.0090,
+                    fillColor: '#007bff'
+                }
+            }).addTo(map);
+            spawnShahed();
+            setInterval(spawnShahed, Math.random() * 10000 + 3000);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading or processing GeoJSON:', error);
+    });
+
+// === Управление размещением ПВО ===
+let selectedPPOType = null;
+let isSpawningPPO = false;
+
+window.enablePPOPlacement = function(typeName) {
+    selectedPPOType = typeName;
+    isSpawningPPO = true;
+    map.getContainer().style.cursor = 'crosshair';
+};
+
+map.on('click', function(e) {
+    if (isSpawningPPO && selectedPPOType) {
+        spawnPPO(selectedPPOType, [e.latlng.lat, e.latlng.lng]);
+        isSpawningPPO = false;
+        selectedPPOType = null;
+        map.getContainer().style.cursor = '';
+    }
+});

@@ -83,6 +83,14 @@
         }
     </style>
 </head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-WKY8PZP3Z2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-WKY8PZP3Z2');
+</script>
 <body>
     <div id="mapid"></div>
     
@@ -104,7 +112,7 @@
         ">0</span>
         <div id="shop-panel">
             <h3>Shop</h3>
-            <button id="buy-aa">Buy AA</button>
+            <button id="buy-aa">Buy AA <script> </script></button>
             <button id="buy-drone">Buy Drone</button>
             <button id="close-shop">Close</button>
         </div>
@@ -125,19 +133,19 @@
             shopPanel.style.display = 'none';
         };
 
-        // Example: connect AA buy button to AA spawn
+        // Кнопка "Buy AA" включает режим установки ПВО
         document.getElementById('buy-aa').onclick = () => {
             shopPanel.style.display = 'none';
-            if (window.enableAASpawn) enableAASpawn();
+            if (window.enablePPOPlacement) enablePPOPlacement("Mobile Group");
         };
-        // Example: connect drone buy button to spawnShahed
+
+        // Кнопка "Buy Drone" спавнит шахед
         document.getElementById('buy-drone').onclick = () => {
             shopPanel.style.display = 'none';
             if (window.spawnShahed) spawnShahed();
         };
 
         function updateShahedCount(count) {
-            // Например, элемент с id="shahed-count"
             document.getElementById('shahed-count').textContent = count;
         }
     </script>
