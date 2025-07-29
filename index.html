@@ -116,6 +116,7 @@
             <button id="buy-aa">Buy AA <script> </script></button>
             <button id="buy-drone">Buy Drone</button>
             <button id="close-shop">Close</button>
+            <button id="del-ppo">Delete Ppo </button>
         </div>
     </div>
 
@@ -139,7 +140,10 @@
             shopPanel.style.display = 'none';
             if (window.enablePPOPlacement) enablePPOPlacement("Mobile Group");
         };
-
+        document.getElementById('del-ppo').onclick = () => {
+            shopPanel.style.display = 'none';
+            if (window.enablePPODeleteMode) enablePPODeleteMode();
+        };
         // Кнопка "Buy Drone" спавнит шахед
         document.getElementById('buy-drone').onclick = () => {
             shopPanel.style.display = 'none';

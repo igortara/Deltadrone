@@ -5,7 +5,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=xpum0XQiGdzHO7iEg7wl';
+const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=aKi8preB5xn8tulgCx5z';
 L.tileLayer(maptilerSatelliteUrl, {
     attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
     maxZoom: 19
@@ -181,12 +181,6 @@ function launchDrone(from, to) {
             enteredUkraine = true;
             dronesEnteredUkraine++;
             if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
-            showNotification({
-                image: 'images/geran.png',
-                title: 'Shahed entered Ukraine',
-                description: 'A drone has crossed the border.',
-                duration: 3000
-            });
         }
 
         // Остановка на границе
@@ -197,6 +191,12 @@ function launchDrone(from, to) {
                 map.removeLayer(targetMarker);
             }, 1500);
             return;
+            showNotification({
+                image: 'images/geran.png',
+                title: 'Drone stopped at border',
+                description: 'The drone has stopped at the border of Ukraine.',
+                duration: 3000
+            });
         }
 
         // Прилет к цели
@@ -206,6 +206,12 @@ function launchDrone(from, to) {
             if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
             marker.setLatLng(to);
             marker.bindPopup("💥 Explosion!");
+            showNotification({
+                image: 'images/geran.png',
+                title: 'Drone reached target',
+                description: `The drone has reached its target in ${targetMarker.getLatLng().lat.toFixed(4)}, ${targetMarker.getLatLng().lng.toFixed(4)}.`,
+                duration: 3000
+            });
             setTimeout(() => {
                 map.removeLayer(marker);
                 map.removeLayer(targetMarker);
@@ -240,7 +246,14 @@ function launchDrone(from, to) {
 const TARGET_CITIES = [
     { name: "Kyiv", coords: [50.4501, 30.5234], radius: 12000 },
     { name: "Starokonstantinov", coords: [49.7556, 27.2061], radius: 8000 },
-    { name: "Dnipro", coords: [48.4647, 35.0462], radius: 10000 }
+    { name: "Dnipro", coords: [48.4647, 35.0462], radius: 10000 }, 
+    { name: "Kharkiv", coords: [49.9935, 36.2304], radius: 12000 },
+    { name: "Odesa", coords: [46.4825, 30.7233], radius: 15000 },
+    { name: "Zaporizhzhia", coords: [47.8388, 35.1396], radius: 10000 },
+    { name: "Mykolaiv", coords: [46.9750, 31.9946], radius: 8000 },
+    { name: "Lviv", coords: [49.8397, 24.0297], radius: 9000 },
+    { name: "Vinnytsia", coords: [49.2328, 28.4682], radius: 8000 },
+    { name: "Kremenchuk", coords: [49.0709, 33.4164], radius: 7000 }
     // Добавляйте новые города сюда
 ];
 
@@ -299,10 +312,24 @@ function spawnPPO(name, coords) {
         color: '#ff0000ab',
         fillColor: '#ff000004',
         fillOpacity: 0.15,
-        radius: ppo.radius
+        radius: ppo.radius,
+        interactive: true
     }).addTo(map);
     circle._ppoType = ppo; // <-- Сохраняем тип ПВО в объекте круга!
+    circle._ppoMarker = marker;
     marker.bindPopup(`${ppo.name} deployed!`).openPopup();
+
+    // Добавляем обработчик контекстного меню
+    circle.on('contextmenu', function(e) {
+        const point = map.latLngToContainerPoint(e.latlng);
+        showPPOContextMenu(point, circle);
+        L.DomEvent.stopPropagation(e);
+    });
+    marker.on('contextmenu', function(e) {
+        const point = map.latLngToContainerPoint(e.latlng);
+        showPPOContextMenu(point, circle);
+        L.DomEvent.stopPropagation(e);
+    });
 }
 
 // В функции tryShootDownDrone используйте тип ПВО из круга:
@@ -394,3 +421,100 @@ map.on('click', function(e) {
         map.getContainer().style.cursor = '';
     }
 });
+
+// === Кастомное контекстное меню для удаления ПВО ===
+let ppoContextMenu = null;
+let ppoCircleToDelete = null;
+
+// Создание меню
+function showPPOContextMenu(latlng, circle) {
+    hidePPOContextMenu();
+    ppoCircleToDelete = circle;
+
+    ppoContextMenu = document.createElement('div');
+    ppoContextMenu.id = 'ppo-context-menu';
+    ppoContextMenu.style.position = 'fixed';
+    ppoContextMenu.style.left = latlng.x + 'px';
+    ppoContextMenu.style.top = latlng.y + 'px';
+    ppoContextMenu.style.background = '#252B36';
+    ppoContextMenu.style.color = '#cfcfcf';
+    ppoContextMenu.style.borderRadius = '8px';
+    ppoContextMenu.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18)';
+    ppoContextMenu.style.padding = '10px 18px';
+    ppoContextMenu.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+    ppoContextMenu.style.fontSize = '15px';
+    ppoContextMenu.style.zIndex = '4000';
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Удалить ПВО';
+    delBtn.style.background = '#ff3b3b';
+    delBtn.style.color = '#fff';
+    delBtn.style.border = 'none';
+    delBtn.style.borderRadius = '6px';
+    delBtn.style.padding = '7px 18px';
+    delBtn.style.fontWeight = 'bold';
+    delBtn.style.cursor = 'pointer';
+    delBtn.onclick = function() {
+        if (ppoCircleToDelete) {
+            map.removeLayer(ppoCircleToDelete);
+            if (ppoCircleToDelete._ppoMarker) map.removeLayer(ppoCircleToDelete._ppoMarker);
+        }
+        hidePPOContextMenu();
+    };
+
+    ppoContextMenu.appendChild(delBtn);
+    document.body.appendChild(ppoContextMenu);
+
+    // Закрытие меню при клике вне его
+    setTimeout(() => {
+        document.addEventListener('mousedown', hidePPOContextMenu, { once: true });
+    }, 0);
+}
+
+function hidePPOContextMenu() {
+    if (ppoContextMenu) {
+        ppoContextMenu.remove();
+        ppoContextMenu = null;
+        ppoCircleToDelete = null;
+    }
+}
+
+// Стили для меню (можно добавить в index.html <style>)
+if (!document.getElementById('ppo-context-menu-style')) {
+    const style = document.createElement('style');
+    style.id = 'ppo-context-menu-style';
+    style.textContent = `
+        #ppo-context-menu button:hover {
+            background: #d32f2f;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// === Режим удаления ПВО по клику ===
+function enablePPODeleteMode() {
+    map.getContainer().style.cursor = 'not-allowed';
+    let handler = function(e) {
+        // Ищем круг ПВО под курсором
+        let found = null;
+        map.eachLayer(layer => {
+            if (layer instanceof L.Circle && layer.options.color === '#ff0000ab') {
+                const latlng = layer.getLatLng();
+                const radius = layer.getRadius();
+                const dist = map.distance(e.latlng, latlng);
+                if (dist <= radius) found = layer;
+            }
+        });
+        if (found) {
+            // Удаляем круг и маркер
+            map.removeLayer(found);
+            if (found._ppoMarker) map.removeLayer(found._ppoMarker);
+        }
+        map.getContainer().style.cursor = '';
+        map.off('click', handler);
+    };
+    map.on('click', handler);
+}
+
+// Пример использования:
+// enablePPODeleteMode(); // После вызова кликните по кругу ПВО для удаления
