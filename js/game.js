@@ -5,9 +5,6 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// Убедитесь, что эта ссылка корректна и указывает на "сырой" файл на GitHub
-const githubRawUrl = 'https://raw.githubusercontent.com/igortara/Deltadrone/refs/heads/main/js/ukrainedeltadrone.geojson'; 
-
 const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=aKi8preB5xn8tulgCx5z';
 L.tileLayer(maptilerSatelliteUrl, {
     attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
@@ -26,7 +23,7 @@ const launchPoints = [
 ];
 
 // === Переменные для Украины и шахедов ===
-let ukraineGeoJson = null; // Будет загружено GeoJSON для границ Украины
+let ukraineGeoJson = null;
 let dronesEnteredUkraine = 0;
 const activeDrones = [];
 
@@ -35,17 +32,14 @@ async function getRandomPointInUkraine() {
     if (!ukraineGeoJson) return null;
     let randomPoint = null;
     let pointInUkraine = false;
-    // Используем ukraineGeoJson.features[0], так как ukraineGeoJson - FeatureCollection,
-    // а Leaflet ожидает Feature или Geometry для getBounds
-    let bounds = L.geoJSON(ukraineGeoJson.features[0]).getBounds();
+    let bounds = L.geoJSON(ukraineGeoJson).getBounds();
     let attempts = 0;
     const maxAttempts = 5000;
     while (!pointInUkraine && attempts < maxAttempts) {
         const lat = bounds.getSouth() + Math.random() * (bounds.getNorth() - bounds.getSouth());
         const lng = bounds.getWest() + Math.random() * (bounds.getEast() - bounds.getWest());
         randomPoint = turf.point([lng, lat]);
-        // Передаем непосредственно первый объект Feature полигона, а не всю FeatureCollection
-        pointInUkraine = turf.booleanPointInPolygon(randomPoint, ukraineGeoJson.features[0]);
+        pointInUkraine = turf.booleanPointInPolygon(randomPoint, ukraineGeoJson);
         attempts++;
     }
     if (pointInUkraine) {
@@ -180,8 +174,7 @@ function launchDrone(from, to) {
             }
         });
 
-        // Передаем непосредственно первый объект Feature полигона, а не всю FeatureCollection
-        const isInUkraine = turf.booleanPointInPolygon(turf.point([lng, lat]), ukraineGeoJson.features[0]);
+        const isInUkraine = turf.booleanPointInPolygon(turf.point([lng, lat]), ukraineGeoJson);
 
         // Вход в Украину
         if (!enteredUkraine && isInUkraine) {
@@ -193,17 +186,17 @@ function launchDrone(from, to) {
         // Остановка на границе
         if (enteredUkraine && !isInUkraine) {
             marker.bindPopup("🛑 Drone stopped at border!");
+            setTimeout(() => {
+                map.removeLayer(marker);
+                map.removeLayer(targetMarker);
+            }, 1500);
+            return;
             showNotification({
                 image: 'images/geran.png',
                 title: 'Drone stopped at border',
                 description: 'The drone has stopped at the border of Ukraine.',
                 duration: 3000
             });
-            setTimeout(() => {
-                map.removeLayer(marker);
-                map.removeLayer(targetMarker);
-            }, 1500);
-            return; // Останавливаем движение дрона
         }
 
         // Прилет к цели
@@ -223,7 +216,7 @@ function launchDrone(from, to) {
                 map.removeLayer(marker);
                 map.removeLayer(targetMarker);
             }, 1500);
-            return; // Останавливаем движение дрона
+            return;
         }
 
         let angle = Math.atan2(dLng, dLat);
@@ -253,7 +246,7 @@ function launchDrone(from, to) {
 const TARGET_CITIES = [
     { name: "Kyiv", coords: [50.4501, 30.5234], radius: 12000 },
     { name: "Starokonstantinov", coords: [49.7556, 27.2061], radius: 8000 },
-    { name: "Dnipro", coords: [48.4647, 35.0462], radius: 10000 },
+    { name: "Dnipro", coords: [48.4647, 35.0462], radius: 10000 }, 
     { name: "Kharkiv", coords: [49.9935, 36.2304], radius: 12000 },
     { name: "Odesa", coords: [46.4825, 30.7233], radius: 15000 },
     { name: "Zaporizhzhia", coords: [47.8388, 35.1396], radius: 10000 },
@@ -286,12 +279,6 @@ function getRandomPointInCity(city) {
 
 // === Функция для спавна шахеда в случайный город ===
 async function spawnShahed() {
-    // Убедимся, что ukraineGeoJson загружен, прежде чем пытаться спавнить шахеды
-    if (!ukraineGeoJson) {
-        console.warn('GeoJSON для Украины еще не загружен. Шахед не может быть запущен.');
-        return;
-    }
-
     const city = TARGET_CITIES[Math.floor(Math.random() * TARGET_CITIES.length)];
     const target = getRandomPointInCity(city);
     const index = Math.floor(Math.random() * launchPoints.length);
@@ -381,40 +368,39 @@ function getDronesEnteredUkraine() {
 }
 
 // === Загрузка границ Украины и запуск шахедов ===
-fetch(githubRawUrl)
+fetch('https://raw.githubusercontent.com/datasets/geo-countries/main/data/countries.geojson')
     .then(response => {
-        if (!response.ok) {
-            throw new Error('Не удалось загрузить файл с GitHub: ' + response.statusText);
-        }
-        return response.json(); // Парсит ответ как JSON
+        if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+        return response.json();
     })
     .then(data => {
-        console.log('Данные GeoJSON загружены с GitHub:', data);
-        ukraineGeoJson = data; // *** Ключевое изменение: сохраняем загруженные данные ***
-
-        // Отобразить границу Украины на карте для визуальной проверки
-        // Используем ukraineGeoJson.features[0], так как ukraineGeoJson - FeatureCollection
-        L.geoJSON(ukraineGeoJson.features[0], {
-            style: {
-                color: '#00ff00',
-                weight: 2,
-                opacity: 0.7,
-                fillOpacity: 0.05
-            }
-        }).addTo(map);
-
-        // Запускаем спавн шахедов только после того, как GeoJSON будет загружен и инициализирован
-        setInterval(spawnShahed, 7000); // Запускать новый шахед каждые 7 секунд
-
+        if (data.type === "FeatureCollection" && data.features && data.features.length > 0) {
+            const foundUkraine = data.features.find(feature =>
+                feature.properties.name === 'Ukraine' ||
+                feature.properties.name_long === 'Ukraine' ||
+                feature.properties.iso_a2 === 'UA' ||
+                feature.properties.iso_a3 === 'UKR'
+            );
+            if (foundUkraine) ukraineGeoJson = foundUkraine;
+        } else if (data.type === "Feature" || data.type === "MultiPolygon" || data.type === "Polygon") {
+            ukraineGeoJson = data;
+        }
+        if (ukraineGeoJson) {
+            L.geoJSON(ukraineGeoJson, {
+                style: {
+                    color: '#007bff0e',
+                    weight: 2,
+                    opacity: 0.7,
+                    fillOpacity: 0.0090,
+                    fillColor: '#007bff'
+                }
+            }).addTo(map);
+            spawnShahed();
+            setInterval(spawnShahed, Math.random() * 10000 + 3000);
+        }
     })
     .catch(error => {
-        console.error('Ошибка при загрузке GeoJSON с GitHub:', error);
-        showNotification({
-            image: 'images/geran.png',
-            title: 'Ошибка загрузки карты',
-            description: 'Не удалось загрузить границы Украины. Шахеды не будут спавниться.',
-            duration: 5000
-        });
+        console.error('Error loading or processing GeoJSON:', error);
     });
 
 // === Управление размещением ПВО ===
@@ -441,15 +427,15 @@ let ppoContextMenu = null;
 let ppoCircleToDelete = null;
 
 // Создание меню
-function showPPOContextMenu(point, circle) {
+function showPPOContextMenu(latlng, circle) {
     hidePPOContextMenu();
     ppoCircleToDelete = circle;
 
     ppoContextMenu = document.createElement('div');
     ppoContextMenu.id = 'ppo-context-menu';
     ppoContextMenu.style.position = 'fixed';
-    ppoContextMenu.style.left = point.x + 'px';
-    ppoContextMenu.style.top = point.y + 'px';
+    ppoContextMenu.style.left = latlng.x + 'px';
+    ppoContextMenu.style.top = latlng.y + 'px';
     ppoContextMenu.style.background = '#252B36';
     ppoContextMenu.style.color = '#cfcfcf';
     ppoContextMenu.style.borderRadius = '8px';
