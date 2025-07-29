@@ -368,40 +368,24 @@ function getDronesEnteredUkraine() {
 }
 
 // === Загрузка границ Украины и запуск шахедов ===
-fetch('https://raw.githubusercontent.com/datasets/geo-countries/main/data/countries.geojson')
+// === Загрузка границ Украины и запуск шахедов ===
+// Вместо загрузки из URL, используем ваш предоставленный GeoJSON
+fetch('ukrainedeltadrone.geojson')
     .then(response => {
-        if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-        return response.json();
+        if (!response.ok) {
+            throw new Error('Сетевой ответ был неудовлетворительным: ' + response.statusText);
+        }
+        return response.json(); // Парсит ответ как JSON
     })
     .then(data => {
-        if (data.type === "FeatureCollection" && data.features && data.features.length > 0) {
-            const foundUkraine = data.features.find(feature =>
-                feature.properties.name === 'Ukraine' ||
-                feature.properties.name_long === 'Ukraine' ||
-                feature.properties.iso_a2 === 'UA' ||
-                feature.properties.iso_a3 === 'UKR'
-            );
-            if (foundUkraine) ukraineGeoJson = foundUkraine;
-        } else if (data.type === "Feature" || data.type === "MultiPolygon" || data.type === "Polygon") {
-            ukraineGeoJson = data;
-        }
-        if (ukraineGeoJson) {
-            L.geoJSON(ukraineGeoJson, {
-                style: {
-                    color: '#007bff0e',
-                    weight: 2,
-                    opacity: 0.7,
-                    fillOpacity: 0.0090,
-                    fillColor: '#007bff'
-                }
-            }).addTo(map);
-            spawnShahed();
-            setInterval(spawnShahed, Math.random() * 10000 + 3000);
-        }
+        console.log('Данные GeoJSON загружены:', data);
+        // Здесь вы можете использовать 'data' с turf.js или другими библиотеками
     })
     .catch(error => {
-        console.error('Error loading or processing GeoJSON:', error);
+        console.error('Ошибка при загрузке GeoJSON:', error);
     });
+
+
 
 // === Управление размещением ПВО ===
 let selectedPPOType = null;
