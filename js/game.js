@@ -1,4 +1,5 @@
 const map = L.map('mapid').setView([49, 32], 6);
+let dronespath = false;
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors'
@@ -148,7 +149,11 @@ function launchDrone(from, to) {
     });
 
     const marker = L.marker(from, { icon: droneIcon }).addTo(map);
-    trackDronePath(marker);
+    if (dronespath == true) {
+        trackDronePath(marker);
+        
+    }
+    
     const targetMarker = L.marker(to).addTo(map);
 
     const speed = 0.0010;
@@ -661,8 +666,8 @@ function enablePPODeleteMode() {
 function trackDronePath(marker) {
     const pathCoords = [marker.getLatLng()];
     const polyline = L.polyline(pathCoords, {
-        color: 'purple',
-        weight: 2,
+        color: '#f21f1f',
+        weight: 3,
         opacity: 0.7
     }).addTo(map);
 
