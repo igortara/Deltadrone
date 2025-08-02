@@ -19,7 +19,8 @@ const launchPoints = [
     { name: "Chatalovo", coords: [54.3103, 32.4962] },
     { name: "Gvardeyskoe", coords: [45.11678, 33.97634] },
     { name: "Chauda", coords: [45.00529, 35.84238] },
-    { name: "Millerovo", coords: [48.8000, 39.5000] }
+    { name: "Millerovo", coords: [48.8000, 39.5000] },
+    { name: "Primorsko-Akhtarsk", coords: [46.043509, 38.177654] },
 ];
 
 // === Переменные для Украины и шахедов ===
