@@ -11,17 +11,17 @@ L.tileLayer(maptilerSatelliteUrl, {
 }).addTo(map);
 
 const launchPoints = [
-    { name: "Kursk", coords: [51.7306, 36.1939], type: "shahed" },
-    { name: "Orel", coords: [52.8915, 35.8594], type: "shahed" },
-    { name: "Navlya", coords: [52.81163, 34.50643], type: "shahed" },
-    { name: "Chatalovo", coords: [54.3103, 32.4962], type: "shahed" },
-    { name: "Gvardeyskoe", coords: [45.11678, 33.97634], type: "shahed" },
-    { name: "Chauda", coords: [45.00529, 35.84238], type: "shahed" },
-    { name: "Millerovo", coords: [48.8000, 39.5000], type: "shahed" },
-    { name: "Belgorod", coords: [50.6056, 36.5778], type: "iskander" },
-    { name: "Voronezh", coords: [51.6607, 39.2003], type: "iskander" }
+    { name: "Kursk", coords: [51.7306, 36.1939] },
+    { name: "Orel", coords: [52.8915, 35.8594] },
+    { name: "Navlya", coords: [52.81163, 34.50643] },
+    { name: "Chatalovo", coords: [54.3103, 32.4962] },
+    { name: "Gvardeyskoe", coords: [45.11678, 33.97634] },
+    { name: "Chauda", coords: [45.00529, 35.84238] },
+    { name: "Millerovo", coords: [48.8000, 39.5000] },
+    { name: "Primorsko-Akhtarsk", coords: [46.043509, 38.177654] },
 ];
 
+// === Переменные для Украины и шахедов ===
 let ukraineGeoJson = null;
 let dronesEnteredUkraine = 0;
 const activeDrones = [];
@@ -146,6 +146,7 @@ function launchDrone(from, to) {
     });
 
     const marker = L.marker(from, { icon: droneIcon }).addTo(map);
+    trackDronePath(marker);
     const targetMarker = L.marker(to).addTo(map);
 
     const speed = 0.0010;
@@ -650,4 +651,29 @@ function enablePPODeleteMode() {
         map.off('click', handler);
     };
     map.on('click', handler);
+}
+
+// Пример использования:
+// enablePPODeleteMode(); // После вызова кликните по кругу ПВО для удаления
+
+function trackDronePath(marker) {
+    const pathCoords = [marker.getLatLng()];
+    const polyline = L.polyline(pathCoords, {
+        color: 'purple',
+        weight: 2,
+        opacity: 0.7
+    }).addTo(map);
+
+    marker._dronePath = polyline;
+
+    marker._pathTracking = setInterval(() => {
+        if (!marker._map) {
+            clearInterval(marker._pathTracking);
+            map.removeLayer(polyline);
+            return;
+        }
+        const currentPos = marker.getLatLng();
+        pathCoords.push(currentPos);
+        polyline.setLatLngs(pathCoords);
+    }, 300);
 }
