@@ -524,19 +524,21 @@ function enablePPODeleteMode() {
 function trackDronePath(marker) {
     const pathCoords = [marker.getLatLng()];
     const polyline = L.polyline(pathCoords, {
-        color: 'orange',
+        color: 'purple',
         weight: 2,
         opacity: 0.7
     }).addTo(map);
 
-    const interval = setInterval(() => {
+    marker._dronePath = polyline;
+
+    marker._pathTracking = setInterval(() => {
         if (!marker._map) {
-            clearInterval(interval);
+            clearInterval(marker._pathTracking);
             map.removeLayer(polyline);
             return;
         }
         const currentPos = marker.getLatLng();
         pathCoords.push(currentPos);
         polyline.setLatLngs(pathCoords);
-    }, 500); // Оновлюємо кожні 0.5 секунди
+    }, 300);
 }
