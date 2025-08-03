@@ -666,9 +666,10 @@ function enablePPODeleteMode() {
 function trackDronePath(marker) {
     const pathCoords = [marker.getLatLng()];
     const polyline = L.polyline(pathCoords, {
-        color: 'red',
-        weight: 3,
-        opacity: 0.7
+        color: 'orange',
+        weight: 2,
+        opacity: 0.6,
+        smoothFactor: 1
     }).addTo(map);
 
     marker._dronePath = polyline;
@@ -676,11 +677,13 @@ function trackDronePath(marker) {
     marker._pathTracking = setInterval(() => {
         if (!marker._map) {
             clearInterval(marker._pathTracking);
-            map.removeLayer(polyline);
+            if (map.hasLayer(polyline)) {
+                map.removeLayer(polyline);
+            }
             return;
         }
         const currentPos = marker.getLatLng();
         pathCoords.push(currentPos);
         polyline.setLatLngs(pathCoords);
-    }, 300);
+    }, 300); // частота оновлення шляху
 }
