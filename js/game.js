@@ -1,5 +1,5 @@
 const map = L.map('mapid').setView([49, 32], 6);
-let dronespath = false; // Установите true, если хотите видеть пути дронов
+let dronespath = false; // This variable seems to control if drone paths are tracked
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -141,29 +141,6 @@ function showNotification({ image = '', title = '', description = '', duration =
     }, duration);
 }
 
-// Новая функция для отслеживания пути дрона
-function trackDronePath(marker) {
-    const pathCoords = [marker.getLatLng()];
-    const polyline = L.polyline(pathCoords, {
-        color: '#f21f1f',
-        weight: 3,
-        opacity: 0.7
-    }).addTo(map);
-
-    marker._dronePath = polyline;
-
-    marker._pathTracking = setInterval(() => {
-        if (!marker._map) {
-            clearInterval(marker._pathTracking);
-            map.removeLayer(polyline);
-            return;
-        }
-        const currentPos = marker.getLatLng();
-        pathCoords.push(currentPos);
-        polyline.setLatLngs(pathCoords);
-    }, 300);
-}
-
 function launchDrone(from, to) {
     const droneIcon = L.divIcon({
         className: "drone-icon",
@@ -173,7 +150,7 @@ function launchDrone(from, to) {
     });
 
     const marker = L.marker(from, { icon: droneIcon }).addTo(map);
-    if (dronespath === true) {
+    if (dronespath === true) { // Changed to strict equality
         trackDronePath(marker);
     }
 
@@ -222,13 +199,7 @@ function launchDrone(from, to) {
                     duration: 3000
                 });
                 setTimeout(() => {
-                    if (map.hasLayer(marker)) {
-                        map.removeLayer(marker);
-                        if (marker._dronePath) {
-                            map.removeLayer(marker._dronePath);
-                            clearInterval(marker._pathTracking);
-                        }
-                    }
+                    if (map.hasLayer(marker)) map.removeLayer(marker);
                     if (map.hasLayer(targetMarker)) map.removeLayer(targetMarker);
                 }, 1500);
             }
@@ -249,13 +220,7 @@ function launchDrone(from, to) {
             });
             createExplosionCircle(to, 1200, '#ff6600');
             setTimeout(() => {
-                if (map.hasLayer(marker)) {
-                    map.removeLayer(marker);
-                    if (marker._dronePath) {
-                        map.removeLayer(marker._dronePath);
-                        clearInterval(marker._pathTracking);
-                    }
-                }
+                if (map.hasLayer(marker)) map.removeLayer(marker);
                 if (map.hasLayer(targetMarker)) map.removeLayer(targetMarker);
             }, 1500);
             return;
@@ -367,100 +332,6 @@ function launchIskander(from, to) {
     move();
 }
 
-// Новая функция для Орлана
-function launchOrlan(from, targetCity) {
-    const orlanIcon = L.divIcon({
-        className: "orlan-icon",
-        html: `<img src="images/orlan.png" width="32" height="32" />`, // Укажите правильный путь к иконке
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
-    });
-
-    const marker = L.marker(from, { icon: orlanIcon }).addTo(map);
-    marker._isOrlan = true;
-
-    const speed = 0.0005; // Скорость Орлана
-    const loiterRadius = 0.05; // Радиус кружения (в градусах широты/долготы)
-    let phase = 'approach'; // Фазы: 'approach' (приближение), 'loiter' (кружение), 'return' (возврат)
-    let currentTarget = targetCity.coords; // Текущая цель (сначала город)
-    let loiterCenter = null; // Центр кружения
-    let loiterAngle = Math.random() * Math.PI * 2; // Начальный угол для кружения
-
-    let returnPoint = from; // Точка возврата
-
-    function move() {
-        if (!marker._map) return; // Если маркер удален, останавливаем движение
-
-        const lat = marker.getLatLng().lat;
-        const lng = marker.getLatLng().lng;
-
-        let dLat = currentTarget[0] - lat;
-        let dLng = currentTarget[1] - lng;
-        let dist = Math.sqrt(dLat * dLat + dLng * dLng);
-
-        // Проверка на вхождение в зону ПВО
-        map.eachLayer(layer => {
-            if (layer instanceof L.Circle && layer.options.color === '#ff0000ab') {
-                tryShootDownThreat(marker, layer);
-            }
-        });
-
-        if (phase === 'approach') {
-            if (dist < loiterRadius * 0.5) { // Дрон достаточно близко к городу
-                phase = 'loiter';
-                loiterCenter = targetCity.coords;
-                showNotification({
-                    image: 'images/orlan.png',
-                    title: 'БПЛА Орлан-10',
-                    description: `Разведывательный Орлан-10 начал кружение над ${targetCity.name}.`,
-                    duration: 3500
-                });
-                // Запланировать возврат через некоторое время (например, 20-40 секунд)
-                setTimeout(() => {
-                    phase = 'return';
-                    currentTarget = returnPoint; // Цель становится точкой старта
-                    showNotification({
-                        image: 'images/orlan.png',
-                        title: 'БПЛА Орлан-10',
-                        description: `Орлан-10 возвращается на базу.`,
-                        duration: 3000
-                    });
-                }, 20000 + Math.random() * 20000); // Кружение от 20 до 40 секунд
-            }
-        } else if (phase === 'loiter') {
-            loiterAngle += speed * 5; // Скорость вращения
-            dLat = loiterCenter[0] + Math.cos(loiterAngle) * loiterRadius - lat;
-            dLng = loiterCenter[1] + Math.sin(loiterAngle) * loiterRadius - lng;
-            dist = Math.sqrt(dLat * dLat + dLng * dLng); // Обновляем дистанцию для движения
-        } else if (phase === 'return') {
-            if (dist < 0.01) { // Дрон вернулся
-                showNotification({
-                    image: 'images/orlan.png',
-                    title: 'БПЛА Орлан-10',
-                    description: `Орлан-10 вернулся на базу.`,
-                    duration: 3000
-                });
-                if (map.hasLayer(marker)) map.removeLayer(marker);
-                return;
-            }
-        }
-
-        let angle = Math.atan2(dLng, dLat);
-        let normLat = Math.cos(angle);
-        let normLng = Math.sin(angle);
-
-        marker.setLatLng([lat + normLat * speed, lng + normLng * speed]);
-
-        const angleDeg = angle * (180 / Math.PI);
-        const img = marker.getElement()?.querySelector('img');
-        if (img) img.style.transform = `rotate(${angleDeg}deg)`;
-
-        requestAnimationFrame(move);
-    }
-
-    move();
-}
-
 
 const TARGET_CITIES = [
     { name: "Kyiv", coords: [50.4501, 30.5234], radius: 12000 },
@@ -510,35 +381,23 @@ async function spawnThreat() {
     const target = getRandomPointInCity(city);
 
     const rand = Math.random();
-    let typeToSpawn;
-
-    if (rand < 0.2) { // 20% шанс на Орлан
-        typeToSpawn = "orlan";
-    } else if (rand < 0.5) { // 30% шанс на Искандер
-        typeToSpawn = "iskander";
-    } else { // 50% шанс на Шахед
-        typeToSpawn = "shahed";
-    }
+    let isIskander = false;
+    if (rand < 0.3) isIskander = true;
 
     const possibleLaunchPoints = launchPoints.filter(point =>
-        (typeToSpawn === "iskander" && point.type === "iskander") ||
-        (typeToSpawn === "shahed" && point.type === "shahed") ||
-        (typeToSpawn === "orlan" && point.type === "shahed")
+        isIskander ? point.type === "iskander" : point.type === "shahed"
     );
-
     if (possibleLaunchPoints.length === 0) {
-        console.warn(`No suitable launch points found for ${typeToSpawn}`);
+        console.warn(`No suitable launch points found for ${isIskander ? 'Iskander' : 'Shahed'}`);
         return;
     }
 
     const start = possibleLaunchPoints[Math.floor(Math.random() * possibleLaunchPoints.length)];
 
-    if (typeToSpawn === "iskander") {
+    if (isIskander) {
         launchIskander(start.coords, target);
-    } else if (typeToSpawn === "shahed") {
+    } else {
         launchDrone(start.coords, target);
-    } else if (typeToSpawn === "orlan") {
-        launchOrlan(start.coords, city);
     }
 }
 
@@ -601,7 +460,7 @@ function tryShootDownThreat(threatMarker, ppoCircle) {
 
         if (dist <= ppoCircle.getRadius()) {
             let successRate = 0;
-            let targetType = "Unknown Threat";
+            let targetType = "Shahed";
 
             if (threatMarker._isIskander) {
                 targetType = "Iskander";
@@ -621,22 +480,12 @@ function tryShootDownThreat(threatMarker, ppoCircle) {
                     }
                 }
             } else if (threatMarker._isShahed) {
-                targetType = "Shahed";
                 if (ppoType.name === "Patriot" || ppoType.name === "SAMP/T") {
                     successRate = 0.9;
                 } else if (ppoType.name === "S-300" || ppoType.name === "Buk-M1") {
                     successRate = 0.7;
                 } else if (ppoType.name === "Mobile Group") {
                     successRate = 0.8;
-                }
-            } else if (threatMarker._isOrlan) { // НОВОЕ УСЛОВИЕ ДЛЯ ОРЛАНА
-                targetType = "Orlan-10";
-                if (ppoType.name === "Patriot" || ppoType.name === "SAMP/T") {
-                    successRate = 0.7;
-                } else if (ppoType.name === "S-300" || ppoType.name === "Buk-M1") {
-                    successRate = 0.6;
-                } else if (ppoType.name === "Mobile Group") {
-                    successRate = 0.9;
                 }
             }
 
@@ -651,18 +500,13 @@ function tryShootDownThreat(threatMarker, ppoCircle) {
                     dronesEnteredUkraine--;
                     if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
                 }
-                if (map.hasLayer(threatMarker)) {
-                    map.removeLayer(threatMarker);
-                    if (threatMarker._dronePath) { // Удаляем путь Орлана, если он есть
-                        map.removeLayer(threatMarker._dronePath);
-                        clearInterval(threatMarker._pathTracking);
-                    }
-                }
+                if (map.hasLayer(threatMarker)) map.removeLayer(threatMarker);
             } else {
                 showNotification({
                     image: ppoType.image,
                     title: `${ppoType.name} missed!`,
-                    description: `${targetType} evaded interception.`,
+                    description: `${targetType} evaded interception.`
+,
                     duration: 2000
                 });
                 threatMarker._ppoTargeting = false;
@@ -723,6 +567,7 @@ window.enablePPOPlacement = function(typeName) {
 
 map.on('click', function(e) {
     if (isSpawningPPO && selectedPPOType) {
+        // Проверяем, находится ли точка клика в пределах Украины
         if (ukraineGeoJson && turf.booleanPointInPolygon(turf.point([e.latlng.lng, e.latlng.lat]), ukraineGeoJson)) {
             spawnPPO(selectedPPOType, [e.latlng.lat, e.latlng.lng]);
             isSpawningPPO = false;
@@ -733,7 +578,7 @@ map.on('click', function(e) {
                 title: 'Размещение ПВО невозможно',
                 description: 'ПВО можно размещать только на территории Украины.',
                 duration: 2000,
-                image: 'images/warning.png'
+                image: 'images/warning.png' // Убедитесь, что у вас есть это изображение
             });
             console.log("Cannot place PPO outside Ukraine.");
         }
@@ -825,4 +670,29 @@ function enablePPODeleteMode() {
         map.off('click', handler);
     };
     map.on('click', handler);
+}
+
+// Пример использования:
+// enablePPODeleteMode(); // После вызова кликните по кругу ПВО для удаления
+
+function trackDronePath(marker) {
+    const pathCoords = [marker.getLatLng()];
+    const polyline = L.polyline(pathCoords, {
+        color: 'yellow',
+        weight: 3,
+        opacity: 0.7
+    }).addTo(map);
+
+    marker._dronePath = polyline;
+
+    marker._pathTracking = setInterval(() => {
+        if (!marker._map) {
+            clearInterval(marker._pathTracking);
+            map.removeLayer(polyline);
+            return;
+        }
+        const currentPos = marker.getLatLng();
+        pathCoords.push(currentPos);
+        polyline.setLatLngs(pathCoords);
+    }, 300);
 }
