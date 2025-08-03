@@ -666,9 +666,9 @@ function enablePPODeleteMode() {
 function trackDronePath(marker) {
     const pathCoords = [marker.getLatLng()];
     const polyline = L.polyline(pathCoords, {
-        color: 'orange',
+        color: 'red',
         weight: 2,
-        opacity: 0.7
+        opacity: 0.8
     }).addTo(map);
 
     const interval = setInterval(() => {
