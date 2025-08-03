@@ -662,3 +662,24 @@ function enablePPODeleteMode() {
 
 // Пример использования:
 // enablePPODeleteMode(); // После вызова кликните по кругу ПВО для удаления
+
+function trackDronePath(marker) {
+    const pathCoords = [marker.getLatLng()];
+    const polyline = L.polyline(pathCoords, {
+        color: 'orange',
+        weight: 2,
+        opacity: 0.7
+    }).addTo(map);
+
+    const interval = setInterval(() => {
+        if (!marker._map) {
+            clearInterval(interval);
+            map.removeLayer(polyline);
+            return;
+        }
+        const currentPos = marker.getLatLng();
+        pathCoords.push(currentPos);
+        polyline.setLatLngs(pathCoords);
+    }, 250); // Оновлюємо кожні 0.25 секунди
+}
+
