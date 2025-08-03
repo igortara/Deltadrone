@@ -663,27 +663,120 @@ function enablePPODeleteMode() {
 // Пример использования:
 // enablePPODeleteMode(); // После вызова кликните по кругу ПВО для удаления
 
-function trackDronePath(marker) {
-    const pathCoords = [marker.getLatLng()];
-    const polyline = L.polyline(pathCoords, {
-        color: 'orange',
-        weight: 2,
-        opacity: 0.6,
-        smoothFactor: 1
-    }).addTo(map);
+// Глобальний об'єкт для зберігання траєкторій
+const Tracker = {
+  trajectories: [],
+  
+  // Додати нову траєкторію
+  addTrajectory: function(startPoint, targetPoint) {
+    const id = Date.now();
+    const trajectory = {
+      id: id,
+      points: [startPoint],
+      startTime: new Date(),
+      target: targetPoint,
+      polyline: L.polyline([startPoint], {color: '#3498db', weight: 3}),
+      marker: L.marker(startPoint, {
+        icon: L.divIcon({
+          className: 'drone-icon',
+          html: `<div class="drone-marker">✈</div>`,
+          iconSize: [24, 24]
+        })
+      })
+    };
+    
+    this.trajectories.push(trajectory);
+    trajectory.polyline.addTo(map);
+    trajectory.marker.addTo(map);
+    
+    return id;
+  },
+  
+  // Оновити траєкторію
+  updateTrajectory: function(id, newPoint) {
+    const trajectory = this.trajectories.find(t => t.id === id);
+    if (!trajectory) return;
+    
+    trajectory.points.push(newPoint);
+    trajectory.polyline.setLatLngs(trajectory.points);
+    trajectory.marker.setLatLng(newPoint);
+    
+    // Оновлюємо напрямок маркера
+    if (trajectory.points.length > 1) {
+      const prevPoint = trajectory.points[trajectory.points.length-2];
+      const angle = Math.atan2(newPoint[1] - prevPoint[1], newPoint[0] - prevPoint[0]) * 180 / Math.PI;
+      trajectory.marker.setIcon(L.divIcon({
+        className: 'drone-icon',
+        html: `<div class="drone-marker" style="transform: rotate(${angle}deg)">✈</div>`,
+        iconSize: [24, 24]
+      }));
+    }
+  },
+  
+  // Завершити траєкторію
+  completeTrajectory: function(id, intercepted = false) {
+    const trajectory = this.trajectories.find(t => t.id === id);
+    if (!trajectory) return;
+    
+    trajectory.endTime = new Date();
+    trajectory.intercepted = intercepted;
+    
+    // Змінюємо стиль лінії
+    trajectory.polyline.setStyle({
+      color: intercepted ? '#e74c3c' : '#2ecc71',
+      dashArray: intercepted ? null : '5, 5'
+    });
+    
+    // Додаємо інформаційний popup
+    const duration = (trajectory.endTime - trajectory.startTime) / 1000;
+    trajectory.polyline.bindPopup(`
+      <b>Траєкторія #${id}</b><br>
+      <b>Статус:</b> ${intercepted ? 'Перехоплено' : 'Досягнуто цілі'}<br>
+      <b>Тривалість:</b> ${duration.toFixed(1)} сек<br>
+      <b>Точок:</b> ${trajectory.points.length}<br>
+      <b>Дистанція:</b> ${this.calculateDistance(trajectory.points).toFixed(1)} км
+    `).openPopup();
+  },
+  
+  // Розрахувати дистанцію
+  calculateDistance: function(points) {
+    let distance = 0;
+    for (let i = 1; i < points.length; i++) {
+      distance += map.distance(
+        L.latLng(points[i-1][0], points[i-1][1]),
+        L.latLng(points[i][0], points[i][1])
+      );
+    }
+    return distance / 1000; // в кілометрах
+  }
+};
 
-    marker._dronePath = polyline;
+// Стилі для маркера
+const style = document.createElement('style');
+style.textContent = `
+  .drone-marker {
+    font-size: 18px;
+    text-align: center;
+    color: #c0392b;
+    transform-origin: center;
+    transition: transform 0.3s;
+  }
+`;
+document.head.appendChild(style);
 
-    marker._pathTracking = setInterval(() => {
-        if (!marker._map) {
-            clearInterval(marker._pathTracking);
-            if (map.hasLayer(polyline)) {
-                map.removeLayer(polyline);
-            }
-            return;
-        }
-        const currentPos = marker.getLatLng();
-        pathCoords.push(currentPos);
-        polyline.setLatLngs(pathCoords);
-    }, 300); // частота оновлення шляху
+// Приклад використання:
+function launchDrone(from, to) {
+  const trajectoryId = Tracker.addTrajectory(from, to);
+  
+  const animate = () => {
+    // Логіка руху дрона...
+    // При кожному кроці викликаємо:
+    Tracker.updateTrajectory(trajectoryId, newPosition);
+    
+    // При завершенні:
+    // Tracker.completeTrajectory(trajectoryId, true); // для перехопленого
+    // Tracker.completeTrajectory(trajectoryId, false); // для досягненого цілі
+  };
+  
+  animate();
 }
