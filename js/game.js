@@ -149,14 +149,6 @@ function launchDrone(from, to) {
         iconAnchor: [8, 8]
     });
 
-marker._data = {
-    model: "Shahed‑136",
-    name: callsign, 
-    altitude: 1000,        // початкова висота ≈1000 м (можна рандомізувати 60‑4000 м),
-    lastPos: from,
-    lastTime: performance.now()
-};
-
     const marker = L.marker(from, { icon: droneIcon }).addTo(map);
 
     const callsign = "Shahed-" + Math.floor(1000 + Math.random() * 9000);
