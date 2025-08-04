@@ -7,7 +7,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/01987668-7f07-7a1d-b41b-c89006b86c22/style.json?key=nrPpZDOCA8L2mlyUa4zX';
+const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/01987668-7f07-7a1d-b41b-c89006b86c22/?key=nrPpZDOCA8L2mlyUa4zX#1.0/0.00000/0.00000';
 L.tileLayer(maptilerSatelliteUrl, {
     attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright/" target="_blank">&copy; OpenStreetMap contributors</a>',
     maxZoom: 19
