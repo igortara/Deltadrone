@@ -1,5 +1,6 @@
 const map = L.map('mapid').setView([49, 32], 6);
 let dronespath = false; // This variable seems to control if drone paths are tracked
+let selectedDrone = null;
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -148,6 +149,13 @@ function launchDrone(from, to) {
         iconSize: [16, 16],
         iconAnchor: [8, 8]
     });
+
+marker.on('click', () => {
+    selectedDrone = marker;
+    document.getElementById("delta-panel").style.display = "block";
+    document.getElementById("delta-open").style.display = "none";
+
+});
 
     const marker = L.marker(from, { icon: droneIcon }).addTo(map);
 
@@ -711,17 +719,14 @@ function trackDronePath(marker) {
 
 function trackDroneData(marker) {
     const update = () => {
-        if (!marker._map) {
-            clearInterval(marker._deltaUpdater);
-            return;
-        }
+        if (!marker._map || selectedDrone !== marker) return;
 
         const now = performance.now();
         const pos = marker.getLatLng();
         const last = marker._data.lastPos;
         const deltaTime = (now - marker._data.lastTime) / 1000;
-        const distance = map.distance(pos, last); // в метрах
-        const speed = (distance / deltaTime) * 3.6; // в км/год
+        const distance = map.distance(pos, last); 
+        const speed = (distance / deltaTime) * 3.6;
 
         const headingRad = Math.atan2(pos.lng - last.lng, pos.lat - last.lat);
         const headingDeg = (headingRad * 180 / Math.PI + 360) % 360;
@@ -729,7 +734,6 @@ function trackDroneData(marker) {
         document.getElementById("dp-model").textContent = marker._data.model;
         document.getElementById("dp-name").textContent = marker._data.name;
         document.getElementById("dp-speed").textContent = speed.toFixed(1);
-        // встановлюємо реальну модель висоти
         document.getElementById("dp-altitude").textContent = marker._data.altitude;
         document.getElementById("dp-heading").textContent = headingDeg.toFixed(1);
         document.getElementById("dp-lat").textContent = pos.lat.toFixed(5);
