@@ -726,16 +726,15 @@ function trackDroneData(marker) {
         const headingRad = Math.atan2(pos.lng - last.lng, pos.lat - last.lat);
         const headingDeg = (headingRad * 180 / Math.PI + 360) % 360;
 
-        // оновлюємо
         document.getElementById("dp-model").textContent = marker._data.model;
         document.getElementById("dp-name").textContent = marker._data.name;
         document.getElementById("dp-speed").textContent = speed.toFixed(1);
+        // встановлюємо реальну модель висоти
         document.getElementById("dp-altitude").textContent = marker._data.altitude;
         document.getElementById("dp-heading").textContent = headingDeg.toFixed(1);
         document.getElementById("dp-lat").textContent = pos.lat.toFixed(5);
         document.getElementById("dp-lng").textContent = pos.lng.toFixed(5);
 
-        // зберігаємо нові значення
         marker._data.lastPos = pos;
         marker._data.lastTime = now;
     };
