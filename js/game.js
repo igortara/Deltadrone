@@ -691,23 +691,33 @@ function enablePPODeleteMode() {
 function trackDronePath(marker) {
     const pathCoords = [marker.getLatLng()];
     const polyline = L.polyline(pathCoords, {
-        color: 'yellow',
-        weight: 3,
-        opacity: 0.7
+        color: 'orange',
+        weight: 2.2,
+        opacity: 0.9,
+        smoothFactor: 1.5
     }).addTo(map);
 
     marker._dronePath = polyline;
 
-    marker._pathTracking = setInterval(() => {
+    function updatePath() {
         if (!marker._map) {
-            clearInterval(marker._pathTracking);
-            map.removeLayer(polyline);
+            if (map.hasLayer(polyline)) map.removeLayer(polyline);
             return;
         }
+
         const currentPos = marker.getLatLng();
-        pathCoords.push(currentPos);
-        polyline.setLatLngs(pathCoords);
-    }, 300);
+        const lastPos = pathCoords[pathCoords.length - 1];
+
+        // Додаємо лише, якщо координата змінилась — уникає "дрижання"
+        if (currentPos.lat !== lastPos.lat || currentPos.lng !== lastPos.lng) {
+            pathCoords.push(currentPos);
+            polyline.setLatLngs(pathCoords);
+        }
+
+        requestAnimationFrame(updatePath);
+    }
+
+    updatePath();
 }
 
 function trackDroneData(marker) {
