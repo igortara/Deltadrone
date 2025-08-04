@@ -150,6 +150,18 @@ function launchDrone(from, to) {
     });
 
     const marker = L.marker(from, { icon: droneIcon }).addTo(map);
+
+    const callsign = "Shahed-" + Math.floor(1000 + Math.random() * 9000);
+marker._data = {
+    model: "Shahed-136",
+    name: callsign,
+    altitude: Math.floor(50 + Math.random() * 100), // 50–150 м
+    lastPos: from,
+    lastTime: performance.now()
+};
+trackDronePath(marker);
+trackDroneData(marker);
+
     if (dronespath === true) { // Changed to strict equality
         trackDronePath(marker);
     }
