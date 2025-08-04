@@ -150,13 +150,6 @@ function launchDrone(from, to) {
         iconAnchor: [8, 8]
     });
 
-marker.on('click', () => {
-    selectedDrone = marker;
-    document.getElementById("delta-panel").style.display = "block";
-    document.getElementById("delta-open").style.display = "none";
-
-});
-
     const marker = L.marker(from, { icon: droneIcon }).addTo(map);
 
     const callsign = "Shahed-" + Math.floor(1000 + Math.random() * 9000);
