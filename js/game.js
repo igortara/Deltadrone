@@ -743,3 +743,11 @@ function trackDroneData(marker) {
     marker._deltaUpdater = setInterval(update, 1000);
 }
 
+document.getElementById("delta-toggle").onclick = () => {
+    document.getElementById("delta-panel").style.display = "none";
+    document.getElementById("delta-open").style.display = "block";
+};
+document.getElementById("delta-open").onclick = () => {
+    document.getElementById("delta-panel").style.display = "block";
+    document.getElementById("delta-open").style.display = "none";
+};
