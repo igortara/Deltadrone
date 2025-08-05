@@ -2,7 +2,7 @@ const map = L.map('mapid').setView([49, 32], 6);
 let dronespath = false; // This variable seems to control if drone paths are tracked
 let selectedDrone = null;
 
-L.tileLayer('https://api.maptiler.com/maps/01987668-7f07-7a1d-b41b-c89006b86c22/256/{z}/{x}/{y}.png?key=nrPpZDOCA8L2mlyUa4zX', {
+L.tileLayer('https://api.maptiler.com/maps/01987668-7f07-7a1d-b41b-c89006b86c22/?key=nrPpZDOCA8L2mlyUa4zX#1.0/0.00000/0.00000', {
     attribution: '<a href="https://maptiler.com">© MapTiler</a>',
     maxZoom: 19
 }).addTo(map);
