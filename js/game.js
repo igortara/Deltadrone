@@ -2,12 +2,12 @@ const map = L.map('mapid').setView([49, 32], 6);
 let dronespath = false; // This variable seems to control if drone paths are tracked
 let selectedDrone = null;
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+//L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//    maxZoom: 18,
+//    attribution: '&copy; OpenStreetMap contributors'
+//}).addTo(map);
 
-const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=aKi8preB5xn8tulgCx5z';
+const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=jfX0aBkIvFWzEw6s5flj';
 L.tileLayer(maptilerSatelliteUrl, {
     attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright/" target="_blank">&copy; OpenStreetMap contributors</a>',
     maxZoom: 19
@@ -749,11 +749,29 @@ function trackDroneData(marker) {
     marker._deltaUpdater = setInterval(update, 1000);
 }
 
-document.getElementById("delta-toggle").onclick = () => {
-    document.getElementById("delta-panel").style.display = "none";
-    document.getElementById("delta-open").style.display = "block";
-};
-document.getElementById("delta-open").onclick = () => {
-    document.getElementById("delta-panel").style.display = "block";
-    document.getElementById("delta-open").style.display = "none";
-};
+// ... (your existing code before the event listeners)
+
+// Wait for the DOM to be fully loaded before attaching event listeners
+document.addEventListener('DOMContentLoaded', (event) => {
+    // These lines will now only execute after the HTML elements are available
+    const deltaToggle = document.getElementById("delta-toggle");
+    const deltaOpen = document.getElementById("delta-open");
+
+    if (deltaToggle) {
+        deltaToggle.onclick = () => {
+            document.getElementById("delta-panel").style.display = "none";
+            document.getElementById("delta-open").style.display = "block";
+        };
+    } else {
+        console.warn("Element with ID 'delta-toggle' not found.");
+    }
+
+    if (deltaOpen) {
+        deltaOpen.onclick = () => {
+            document.getElementById("delta-panel").style.display = "block";
+            document.getElementById("delta-open").style.display = "none";
+        };
+    } else {
+        console.warn("Element with ID 'delta-open' not found.");
+    }
+});
