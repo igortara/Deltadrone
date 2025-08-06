@@ -1,5 +1,5 @@
 const map = L.map('mapid').setView([49, 32], 6);
-let dronespath = false; // This variable seems to control if drone paths are tracked
+let dronespath = true; // This variable seems to control if drone paths are tracked
 let selectedDrone = null;
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -151,42 +151,43 @@ function launchDrone(from, to) {
     });
 
     const marker = L.marker(from, { icon: droneIcon }).addTo(map);
+    // Добавляем маркер цели, чтобы функция move могла его использовать
+    const targetMarker = L.marker(to).addTo(map); 
 
-   const callsign = "Shahed-" + Math.floor(1000 + Math.random() * 9000);
+    const callsign = "Shahed-" + Math.floor(1000 + Math.random() * 9000);
 
-marker._data = {
-  model: "Shahed-136",
-  name: callsign,
-  altitude: Math.floor(200 + Math.random() * 200), // 200–400 м
-  lastPos: from,
-  lastTime: performance.now()
-};
+    marker._data = {
+        model: "Shahed-136",
+        name: callsign,
+        altitude: Math.floor(200 + Math.random() * 200), // 200–400 м
+        lastPos: from,
+        lastTime: performance.now()
+    };
 
-marker.on('click', () => {
-  selectedDrone = marker;
-  document.getElementById("delta-panel").style.display = "block";
-  document.getElementById("delta-open").style.display = "none";
-});
+    marker.on('click', () => {
+        selectedDrone = marker;
+        document.getElementById("delta-panel").style.display = "block";
+        document.getElementById("delta-open").style.display = "none";
+    });
 
-// Швидкість ~50 м/с
-const speed = 0.00045;
+    // Швидкість ~50 м/с
+    const speed = 0.00045;
 
-const maneuverStrength = 0.06;
-let maneuverAngle = 0;
-let enteredUkraine = false;
-let finished = false;
-marker._isShahed = true;
-activeDrones.push(marker);
+    const maneuverStrength = 0.06;
+    let maneuverAngle = 0;
+    let enteredUkraine = false;
+    let finished = false;
+    marker._isShahed = true;
+    activeDrones.push(marker);
 
-// Добавляем в конец функции:
-    if (dronespath) { // Используем вашу переменную для контроля
-        drawDronePath(from, to, {
+    let dronePathPolyline = null;
+    if (dronespath) {
+        dronePathPolyline = drawDronePath(L.latLng(from[0], from[1]), L.latLng(to[0], to[1]), {
             color: '#ff7800',
             weight: 2,
             duration: 2000
         });
     }
-}
 
     function move() {
         if (!marker._map) return;
@@ -225,6 +226,7 @@ activeDrones.push(marker);
                 setTimeout(() => {
                     if (map.hasLayer(marker)) map.removeLayer(marker);
                     if (map.hasLayer(targetMarker)) map.removeLayer(targetMarker);
+                    if (dronePathPolyline && map.hasLayer(dronePathPolyline)) map.removeLayer(dronePathPolyline);
                 }, 1500);
             }
             return;
@@ -246,6 +248,7 @@ activeDrones.push(marker);
             setTimeout(() => {
                 if (map.hasLayer(marker)) map.removeLayer(marker);
                 if (map.hasLayer(targetMarker)) map.removeLayer(targetMarker);
+                if (dronePathPolyline && map.hasLayer(dronePathPolyline)) map.removeLayer(dronePathPolyline);
             }, 1500);
             return;
         }
@@ -270,6 +273,7 @@ activeDrones.push(marker);
     }
 
     move();
+}
 
 function launchIskander(from, to) {
     const iskanderIcon = L.divIcon({
@@ -282,8 +286,7 @@ function launchIskander(from, to) {
     const marker = L.marker(from, { icon: iskanderIcon }).addTo(map);
     const targetMarker = L.marker(to).addTo(map);
 
-    trackIskanderPath(marker);
-
+    let iskanderPathPolyline = trackIskanderPath(marker);
 
     const speed = 0.005;
     const maneuverStrength = 0.08;
@@ -332,6 +335,7 @@ function launchIskander(from, to) {
             setTimeout(() => {
                 if (map.hasLayer(marker)) map.removeLayer(marker);
                 if (map.hasLayer(targetMarker)) map.removeLayer(targetMarker);
+                if (iskanderPathPolyline && map.hasLayer(iskanderPathPolyline)) map.removeLayer(iskanderPathPolyline);
             }, 1000);
             return;
         }
@@ -604,7 +608,7 @@ map.on('click', function(e) {
                 title: 'Размещение ПВО невозможно',
                 description: 'ПВО можно размещать только на территории Украины.',
                 duration: 2000,
-                image: 'images/warning.png' // Убедитесь, что у вас есть это изображение
+                image: 'images/warning.png'
             });
             console.log("Cannot place PPO outside Ukraine.");
         }
@@ -614,15 +618,15 @@ map.on('click', function(e) {
 let ppoContextMenu = null;
 let ppoCircleToDelete = null;
 
-function showPPOContextMenu(latlng, circle) {
+function showPPOContextMenu(point, circle) {
     hidePPOContextMenu();
     ppoCircleToDelete = circle;
 
     ppoContextMenu = document.createElement('div');
     ppoContextMenu.id = 'ppo-context-menu';
     ppoContextMenu.style.position = 'fixed';
-    ppoContextMenu.style.left = latlng.x + 'px';
-    ppoContextMenu.style.top = latlng.y + 'px';
+    ppoContextMenu.style.left = point.x + 'px';
+    ppoContextMenu.style.top = point.y + 'px';
     ppoContextMenu.style.background = '#252B36';
     ppoContextMenu.style.color = '#cfcfcf';
     ppoContextMenu.style.borderRadius = '8px';
@@ -698,65 +702,38 @@ function enablePPODeleteMode() {
     map.on('click', handler);
 }
 
-// Пример использования:
-// enablePPODeleteMode(); // После вызова кликните по кругу ПВО для удаления
-
-    function updatePath() {
-        if (!marker._map) {
-            if (map.hasLayer(polyline)) map.removeLayer(polyline);
-            return;
-        }
-
-        const currentPos = marker.getLatLng();
-        const lastPos = pathCoords[pathCoords.length - 1];
-
-        // Додаємо лише, якщо координата змінилась — уникає "дрижання"
-        if (currentPos.lat !== lastPos.lat || currentPos.lng !== lastPos.lng) {
-            pathCoords.push(currentPos);
-            polyline.setLatLngs(pathCoords);
-        }
-
-        requestAnimationFrame(updatePath);
-    }
-
-    updatePath();
-}
-
 function trackDroneData(marker) {
-  const update = () => {
-    if (!marker._map || selectedDrone !== marker) return;
+    const update = () => {
+        if (!marker._map || selectedDrone !== marker) return;
 
-    const now = performance.now();
-    const pos = marker.getLatLng();
-    const last = marker._data.lastPos;
-    const deltaTime = (now - marker._data.lastTime) / 1000;
-    const distance = map.distance(pos, last);
-    const speed = (distance / deltaTime) * 3.6;
+        const now = performance.now();
+        const pos = marker.getLatLng();
+        const last = marker._data.lastPos;
+        const deltaTime = (now - marker._data.lastTime) / 1000;
+        const distance = map.distance(pos, last);
+        const speed = (distance / deltaTime) * 3.6;
 
-    const headingRad = Math.atan2(pos.lng - last.lng, pos.lat - last.lat);
-    const headingDeg = (headingRad * 180 / Math.PI + 360) % 360;
+        const headingRad = Math.atan2(pos.lng - last.lng, pos.lat - last.lat);
+        const headingDeg = (headingRad * 180 / Math.PI + 360) % 360;
 
-    document.getElementById("dp-model").textContent = marker._data.model;
-    document.getElementById("dp-name").textContent = marker._data.name;
-    document.getElementById("dp-speed").textContent = speed.toFixed(1);
-    document.getElementById("dp-altitude").textContent = marker._data.altitude;
-    document.getElementById("dp-heading").textContent = headingDeg.toFixed(1);
-    document.getElementById("dp-lat").textContent = pos.lat.toFixed(5);
-    document.getElementById("dp-lng").textContent = pos.lng.toFixed(5);
+        document.getElementById("dp-model").textContent = marker._data.model;
+        document.getElementById("dp-name").textContent = marker._data.name;
+        document.getElementById("dp-speed").textContent = speed.toFixed(1);
+        document.getElementById("dp-altitude").textContent = marker._data.altitude;
+        document.getElementById("dp-heading").textContent = headingDeg.toFixed(1);
+        document.getElementById("dp-lat").textContent = pos.lat.toFixed(5);
+        document.getElementById("dp-lng").textContent = pos.lng.toFixed(5);
 
-    marker._data.lastPos = pos;
-    marker._data.lastTime = now;
-  };
+        marker._data.lastPos = pos;
+        marker._data.lastTime = now;
+    };
 
-  marker._deltaUpdater = setInterval(update, 1000);
+    marker._deltaUpdater = setInterval(update, 1000);
 }
 
-
-// ... (your existing code before the event listeners)
 
 // Wait for the DOM to be fully loaded before attaching event listeners
 document.addEventListener('DOMContentLoaded', (event) => {
-    // These lines will now only execute after the HTML elements are available
     const deltaToggle = document.getElementById("delta-toggle");
     const deltaOpen = document.getElementById("delta-open");
 
@@ -779,46 +756,37 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 });
 
-document.getElementById("delta-toggle").onclick = () => {
-  document.getElementById("delta-panel").style.display = "none";
-  document.getElementById("delta-open").style.display = "block";
-};
-
-document.getElementById("delta-open").onclick = () => {
-  document.getElementById("delta-panel").style.display = "block";
-  document.getElementById("delta-open").style.display = "none";
-};
-
 function trackIskanderPath(marker) {
-  const pathCoords = [marker.getLatLng()];
-  const polyline = L.polyline(pathCoords, {
-    color: 'red',
-    weight: 2.8,
-    opacity: 0.9,
-    dashArray: '4, 6',
-    smoothFactor: 1.3
-  }).addTo(map);
+    const pathCoords = [marker.getLatLng()];
+    const polyline = L.polyline(pathCoords, {
+        color: 'red',
+        weight: 2.8,
+        opacity: 0.9,
+        dashArray: '4, 6',
+        smoothFactor: 1.3
+    }).addTo(map);
 
-  marker._iskanderPath = polyline;
+    marker._iskanderPath = polyline;
 
-  function updatePath() {
-    if (!marker._map) {
-      if (map.hasLayer(polyline)) map.removeLayer(polyline);
-      return;
+    function updatePath() {
+        if (!marker._map) {
+            if (map.hasLayer(polyline)) map.removeLayer(polyline);
+            return;
+        }
+
+        const currentPos = marker.getLatLng();
+        const last = pathCoords[pathCoords.length - 1];
+
+        if (currentPos.lat !== last.lat || currentPos.lng !== last.lng) {
+            pathCoords.push(currentPos);
+            polyline.setLatLngs(pathCoords);
+        }
+
+        requestAnimationFrame(updatePath);
     }
 
-    const currentPos = marker.getLatLng();
-    const last = pathCoords[pathCoords.length - 1];
-
-    if (currentPos.lat !== last.lat || currentPos.lng !== last.lng) {
-      pathCoords.push(currentPos);
-      polyline.setLatLngs(pathCoords);
-    }
-
-    requestAnimationFrame(updatePath);
-  }
-
-  updatePath();
+    updatePath();
+    return polyline; // Возвращаем полилинию, чтобы ее можно было удалить
 }
 
 // Добавляем трек дрона на карту
@@ -877,17 +845,3 @@ function drawDronePath(startCoords, endCoords, options = {}) {
 
     return path;
 }
-
-// Пример использования:
-const droneStart = L.latLng(50.4501, 30.5234); // Киев
-const droneEnd = L.latLng(51.5074, -0.1278);   // Лондон
-
-
-// Вариант 2 - анимированная пунктирная траектория
-drawDronePath(droneStart, droneEnd, {
-    color: '#ff00ff',
-    weight: 4,
-    dashArray: '10, 15',
-    duration: 5000,
-    pulseEffect: true
-});
