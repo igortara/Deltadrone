@@ -788,36 +788,34 @@ document.getElementById("delta-open").onclick = () => {
   document.getElementById("delta-open").style.display = "none";
 };
 
-function makeDraggable(el) {
-  let isDragging = false;
-  let offsetX = 0;
-  let offsetY = 0;
+function trackIskanderPath(marker) {
+  const pathCoords = [marker.getLatLng()];
+  const polyline = L.polyline(pathCoords, {
+    color: 'red',
+    weight: 2.8,
+    opacity: 0.9,
+    dashArray: '4, 6',
+    smoothFactor: 1.3
+  }).addTo(map);
 
-  const header = el.querySelector("#delta-header");
+  marker._iskanderPath = polyline;
 
-  header.style.cursor = "move";
-
-  header.addEventListener("mousedown", (e) => {
-    isDragging = true;
-    offsetX = e.clientX - el.getBoundingClientRect().left;
-    offsetY = e.clientY - el.getBoundingClientRect().top;
-    document.body.style.userSelect = "none";
-  });
-
-  document.addEventListener("mousemove", (e) => {
-    if (isDragging) {
-      el.style.left = e.clientX - offsetX + "px";
-      el.style.top = e.clientY - offsetY + "px";
-      el.style.right = "auto"; // Щоб не конфліктувало з right
-      el.style.bottom = "auto";
-      el.style.position = "fixed";
+  function updatePath() {
+    if (!marker._map) {
+      if (map.hasLayer(polyline)) map.removeLayer(polyline);
+      return;
     }
-  });
 
-  document.addEventListener("mouseup", () => {
-    isDragging = false;
-    document.body.style.userSelect = "";
-  });
+    const currentPos = marker.getLatLng();
+    const last = pathCoords[pathCoords.length - 1];
+
+    if (currentPos.lat !== last.lat || currentPos.lng !== last.lng) {
+      pathCoords.push(currentPos);
+      polyline.setLatLngs(pathCoords);
+    }
+
+    requestAnimationFrame(updatePath);
+  }
+
+  updatePath();
 }
-
-makeDraggable(document.getElementById("delta-panel"));
