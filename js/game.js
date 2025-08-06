@@ -273,6 +273,9 @@ function launchIskander(from, to) {
     const marker = L.marker(from, { icon: iskanderIcon }).addTo(map);
     const targetMarker = L.marker(to).addTo(map);
 
+    trackIskanderPath(marker);
+
+
     const speed = 0.005;
     const maneuverStrength = 0.08;
     let maneuverAngle = 0;
