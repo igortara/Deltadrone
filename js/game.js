@@ -775,3 +775,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
         console.warn("Element with ID 'delta-open' not found.");
     }
 });
+
+document.getElementById("delta-toggle").onclick = () => {
+  document.getElementById("delta-panel").style.display = "none";
+  document.getElementById("delta-open").style.display = "block";
+};
+
+document.getElementById("delta-open").onclick = () => {
+  document.getElementById("delta-panel").style.display = "block";
+  document.getElementById("delta-open").style.display = "none";
+};
