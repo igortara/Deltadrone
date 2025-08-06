@@ -692,17 +692,6 @@ function enablePPODeleteMode() {
 // Пример использования:
 // enablePPODeleteMode(); // После вызова кликните по кругу ПВО для удаления
 
-function trackDronePath(marker) {
-    const pathCoords = [marker.getLatLng()];
-    const polyline = L.polyline(pathCoords, {
-        color: 'orange',
-        weight: 2.2,
-        opacity: 0.9,
-        smoothFactor: 1.5
-    }).addTo(map);
-
-    marker._dronePath = polyline;
-
     function updatePath() {
         if (!marker._map) {
             if (map.hasLayer(polyline)) map.removeLayer(polyline);
