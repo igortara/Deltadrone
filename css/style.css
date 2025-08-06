@@ -47,3 +47,7 @@
   z-index: 4999;
   display: none;
 }
+
+#delta-panel {
+  z-index: 10000;
+}
