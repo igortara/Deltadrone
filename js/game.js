@@ -178,6 +178,16 @@ let finished = false;
 marker._isShahed = true;
 activeDrones.push(marker);
 
+// Добавляем в конец функции:
+    if (dronespath) { // Используем вашу переменную для контроля
+        drawDronePath(from, to, {
+            color: '#ff7800',
+            weight: 2,
+            duration: 2000
+        });
+    }
+}
+
     function move() {
         if (!marker._map) return;
         const lat = marker.getLatLng().lat;
@@ -811,3 +821,74 @@ function trackIskanderPath(marker) {
 
   updatePath();
 }
+
+// Добавляем трек дрона на карту
+function drawDronePath(startCoords, endCoords, options = {}) {
+    const defaultOptions = {
+        color: '#f200ff',
+        weight: 3,
+        opacity: 0.7,
+        dashArray: '5, 5',
+        animate: true,
+        duration: 3000,
+        pulseEffect: true
+    };
+    
+    const settings = {...defaultOptions, ...options};
+    const path = L.polyline([startCoords, endCoords], {
+        color: settings.color,
+        weight: settings.weight,
+        opacity: settings.opacity,
+        dashArray: settings.dashArray
+    }).addTo(map);
+
+    // Анимация прорисовки
+    if (settings.animate) {
+        let currentIndex = 0;
+        const points = [];
+        const steps = 100;
+        
+        // Генерируем промежуточные точки
+        for (let i = 0; i <= steps; i++) {
+            const lat = startCoords.lat + (endCoords.lat - startCoords.lat) * (i / steps);
+            const lng = startCoords.lng + (endCoords.lng - startCoords.lng) * (i / steps);
+            points.push([lat, lng]);
+        }
+
+        // Постепенное отображение
+        const interval = setInterval(() => {
+            if (currentIndex >= points.length) {
+                clearInterval(interval);
+                
+                // Эффект пульсации при завершении
+                if (settings.pulseEffect) {
+                    path.setStyle({dashArray: null});
+                    setTimeout(() => {
+                        path.setStyle({opacity: 0.3});
+                        setTimeout(() => path.setStyle({opacity: 0.7}), 500);
+                    }, 500);
+                }
+                return;
+            }
+            
+            path.setLatLngs(points.slice(0, currentIndex));
+            currentIndex++;
+        }, settings.duration / steps);
+    }
+
+    return path;
+}
+
+// Пример использования:
+const droneStart = L.latLng(50.4501, 30.5234); // Киев
+const droneEnd = L.latLng(51.5074, -0.1278);   // Лондон
+
+
+// Вариант 2 - анимированная пунктирная траектория
+drawDronePath(droneStart, droneEnd, {
+    color: '#ff00ff',
+    weight: 4,
+    dashArray: '10, 15',
+    duration: 5000,
+    pulseEffect: true
+});
