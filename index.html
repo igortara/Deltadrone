@@ -167,3 +167,30 @@
   </div>
 </div>
 <button id="delta-open">🛰️ Delta</button>
+
+<div id="ppo-panel" style="
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: #1c1f26;
+  color: #eee;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.6);
+  z-index: 10000;
+  width: 220px;
+  font-family: sans-serif;
+">
+  <h3 style="margin-top:0;">Air Defense Control</h3>
+  
+  <label for="ppoSelect">Select Air Defense:</label>
+  <select id="ppoSelect" style="width:100%;margin-bottom:10px;">
+    <option value="Buk-M1">Buk-M1</option>
+    <option value="S-300">S-300</option>
+    <option value="Mobile Group">Mobile Group</option>
+  </select>
+  
+  <button id="placePpoBtn" style="width:100%;margin-bottom:5px;">Place Air Defense</button>
+  <button id="deleteAllPpoBtn" style="width:100%;background:#a00;color:#fff;">Delete All PPO</button>
+</div>
+
