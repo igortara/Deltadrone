@@ -2,16 +2,16 @@ const map = L.map('mapid').setView([49, 32], 6);
 let dronespath = false; // This variable seems to control if drone paths are tracked
 let selectedDrone = null;
 
-//L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-//    maxZoom: 18,
-//    attribution: '&copy; OpenStreetMap contributors'
-//}).addTo(map);
-
-const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=jfX0aBkIvFWzEw6s5flj';
-L.tileLayer(maptilerSatelliteUrl, {
-    attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright/" target="_blank">&copy; OpenStreetMap contributors</a>',
-    maxZoom: 19
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
+
+//const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=jfX0aBkIvFWzEw6s5flj';
+//L.tileLayer(maptilerSatelliteUrl, {
+//    attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright/" target="_blank">&copy; OpenStreetMap contributors</a>',
+//    maxZoom: 19
+//}).addTo(map);
 
 const launchPoints = [
     { name: "Kursk", coords: [51.7306, 36.1939], type: "shahed" },
