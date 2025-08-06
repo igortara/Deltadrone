@@ -160,6 +160,14 @@ marker._data = {
     lastPos: from,
     lastTime: performance.now()
 };
+
+marker.on('click', () => {
+  selectedDrone = marker;
+  // Показуємо панель
+  document.getElementById("delta-panel").style.display = "block";
+  document.getElementById("delta-open").style.display = "none";
+});
+
 trackDronePath(marker);
 trackDroneData(marker);
 
@@ -721,33 +729,34 @@ function trackDronePath(marker) {
 }
 
 function trackDroneData(marker) {
-    const update = () => {
-        if (!marker._map || selectedDrone !== marker) return;
+  const update = () => {
+    if (!marker._map || selectedDrone !== marker) return;
 
-        const now = performance.now();
-        const pos = marker.getLatLng();
-        const last = marker._data.lastPos;
-        const deltaTime = (now - marker._data.lastTime) / 1000;
-        const distance = map.distance(pos, last); 
-        const speed = (distance / deltaTime) * 3.6;
+    const now = performance.now();
+    const pos = marker.getLatLng();
+    const last = marker._data.lastPos;
+    const deltaTime = (now - marker._data.lastTime) / 1000;
+    const distance = map.distance(pos, last);
+    const speed = (distance / deltaTime) * 3.6;
 
-        const headingRad = Math.atan2(pos.lng - last.lng, pos.lat - last.lat);
-        const headingDeg = (headingRad * 180 / Math.PI + 360) % 360;
+    const headingRad = Math.atan2(pos.lng - last.lng, pos.lat - last.lat);
+    const headingDeg = (headingRad * 180 / Math.PI + 360) % 360;
 
-        document.getElementById("dp-model").textContent = marker._data.model;
-        document.getElementById("dp-name").textContent = marker._data.name;
-        document.getElementById("dp-speed").textContent = speed.toFixed(1);
-        document.getElementById("dp-altitude").textContent = marker._data.altitude;
-        document.getElementById("dp-heading").textContent = headingDeg.toFixed(1);
-        document.getElementById("dp-lat").textContent = pos.lat.toFixed(5);
-        document.getElementById("dp-lng").textContent = pos.lng.toFixed(5);
+    document.getElementById("dp-model").textContent = marker._data.model;
+    document.getElementById("dp-name").textContent = marker._data.name;
+    document.getElementById("dp-speed").textContent = speed.toFixed(1);
+    document.getElementById("dp-altitude").textContent = marker._data.altitude;
+    document.getElementById("dp-heading").textContent = headingDeg.toFixed(1);
+    document.getElementById("dp-lat").textContent = pos.lat.toFixed(5);
+    document.getElementById("dp-lng").textContent = pos.lng.toFixed(5);
 
-        marker._data.lastPos = pos;
-        marker._data.lastTime = now;
-    };
+    marker._data.lastPos = pos;
+    marker._data.lastTime = now;
+  };
 
-    marker._deltaUpdater = setInterval(update, 1000);
+  marker._deltaUpdater = setInterval(update, 1000);
 }
+
 
 // ... (your existing code before the event listeners)
 
