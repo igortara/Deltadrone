@@ -270,7 +270,6 @@ activeDrones.push(marker);
     }
 
     move();
-}
 
 function launchIskander(from, to) {
     const iskanderIcon = L.divIcon({
