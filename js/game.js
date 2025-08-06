@@ -152,38 +152,31 @@ function launchDrone(from, to) {
 
     const marker = L.marker(from, { icon: droneIcon }).addTo(map);
 
-    const callsign = "Shahed-" + Math.floor(1000 + Math.random() * 9000);
+   const callsign = "Shahed-" + Math.floor(1000 + Math.random() * 9000);
+
 marker._data = {
-    model: "Shahed-136",
-    name: callsign,
-    altitude: Math.floor(50 + Math.random() * 100), // 50–150 м
-    lastPos: from,
-    lastTime: performance.now()
+  model: "Shahed-136",
+  name: callsign,
+  altitude: Math.floor(200 + Math.random() * 200), // 200–400 м
+  lastPos: from,
+  lastTime: performance.now()
 };
 
 marker.on('click', () => {
   selectedDrone = marker;
-  // Показуємо панель
   document.getElementById("delta-panel").style.display = "block";
   document.getElementById("delta-open").style.display = "none";
 });
 
-trackDronePath(marker);
-trackDroneData(marker);
+// Швидкість ~50 м/с
+const speed = 0.00045;
 
-    if (dronespath === true) { // Changed to strict equality
-        trackDronePath(marker);
-    }
-
-    const targetMarker = L.marker(to).addTo(map);
-
-    const speed = 0.0010;
-    const maneuverStrength = 0.06;
-    let maneuverAngle = 0;
-    let enteredUkraine = false;
-    let finished = false;
-    marker._isShahed = true;
-    activeDrones.push(marker);
+const maneuverStrength = 0.06;
+let maneuverAngle = 0;
+let enteredUkraine = false;
+let finished = false;
+marker._isShahed = true;
+activeDrones.push(marker);
 
     function move() {
         if (!marker._map) return;
