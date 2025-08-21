@@ -161,18 +161,52 @@
 <body>
     <div id="mapid"></div>
 
-    <!-- Панель Shop -->
-    <div id="side-panel">
-        <button id="shop-btn">Shop</button>
-        <span id="shahed-count">0</span>
-        <div id="shop-panel">
-            <h3>Shop</h3>
-            <button id="buy-aa">Buy AA</button>
-            <button id="buy-drone">Buy Drone</button>
-            <button id="close-shop">Close</button>
-            <button id="del-ppo">Delete Ppo</button>
-        </div>
+    <!-- Панель Shop --> 
+<div id="shop-panel">
+  <h3>🛒 Arsenal</h3>
+  
+  <div id="resources">
+    💰 <span id="player-money">500</span>
+  </div>
+
+  <div class="shop-section">
+    <h4>🛡️ Air Defense</h4>
+    <div class="shop-item">
+      <img src="images/Pvo/mobile-group.png" alt="Mobile Group">
+      <div class="info">
+        <strong>Mobile Group</strong>
+        <p>Light unit, intercepts Shaheds</p>
+        <span class="price">100 💰</span>
+        <button onclick="buyPPO('Mobile Group',100)">Buy</button>
+      </div>
     </div>
+
+    <div class="shop-item">
+      <img src="images/Pvo/patriot.png" alt="Patriot">
+      <div class="info">
+        <strong>Patriot</strong>
+        <p>Advanced system, intercepts Shaheds & Iskanders</p>
+        <span class="price">400 💰</span>
+        <button onclick="buyPPO('Patriot',400)">Buy</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="shop-section">
+    <h4>✈️ Drones</h4>
+    <div class="shop-item">
+      <img src="images/geran.png" alt="Shahed">
+      <div class="info">
+        <strong>Shahed</strong>
+        <p>Test launch your own drone</p>
+        <span class="price">50 💰</span>
+        <button onclick="buyDrone(50)">Buy</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="close-shop">Close</button>
+</div>
 
     <!-- Панель Delta Eye -->
     <div id="delta-panel">
