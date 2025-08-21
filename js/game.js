@@ -802,7 +802,9 @@ function drawDronePath(startCoords, endCoords, options = {}) {
     };
     
     const settings = {...defaultOptions, ...options};
-    const path = L.polyline([startCoords, endCoords], {
+
+    // Создаём линию только с начальной точкой
+    const path = L.polyline([startCoords], {
         color: settings.color,
         weight: settings.weight,
         opacity: settings.opacity,
@@ -838,7 +840,7 @@ function drawDronePath(startCoords, endCoords, options = {}) {
                 return;
             }
             
-            path.setLatLngs(points.slice(0, currentIndex));
+            path.setLatLngs(points.slice(0, currentIndex + 1));
             currentIndex++;
         }, settings.duration / steps);
     }
