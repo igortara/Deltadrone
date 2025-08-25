@@ -6,7 +6,11 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
-
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 18
+}).addTo(map);
 //const maptilerSatelliteUrl = 'https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=jfX0aBkIvFWzEw6s5flj';
 //L.tileLayer(maptilerSatelliteUrl, {
 //    attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright/" target="_blank">&copy; OpenStreetMap contributors</a>',
@@ -151,15 +155,14 @@ function launchDrone(from, to) {
     });
 
     const marker = L.marker(from, { icon: droneIcon }).addTo(map);
-    // Добавляем маркер цели, чтобы функция move могла его использовать
-    const targetMarker = L.marker(to).addTo(map); 
+    const targetMarker = L.marker(to).addTo(map);
 
     const callsign = "Shahed-" + Math.floor(1000 + Math.random() * 9000);
 
     marker._data = {
         model: "Shahed-136",
         name: callsign,
-        altitude: Math.floor(200 + Math.random() * 200), // 200–400 м
+        altitude: Math.floor(200 + Math.random() * 200),
         lastPos: from,
         lastTime: performance.now()
     };
@@ -170,9 +173,7 @@ function launchDrone(from, to) {
         document.getElementById("delta-open").style.display = "none";
     });
 
-    // Швидкість ~50 м/с
     const speed = 0.00045;
-
     const maneuverStrength = 0.06;
     let maneuverAngle = 0;
     let enteredUkraine = false;
@@ -180,22 +181,32 @@ function launchDrone(from, to) {
     marker._isShahed = true;
     activeDrones.push(marker);
 
-    let dronePathPolyline = null;
-    if (dronespath) {
-        dronePathPolyline = drawDronePath(L.latLng(from[0], from[1]), L.latLng(to[0], to[1]), {
-            color: '#ff7800',
-            weight: 2,
-            duration: 2000
-        });
-    }
+    // === Линия следа за дроном ===
+    const pathCoords = [L.latLng(from[0], from[1])];
+    const droneTrail = L.polyline(pathCoords, {
+        color: '#ff7800',
+        weight: 2,
+        opacity: 0.7,
+        dashArray: '5, 5'
+    }).addTo(map);
 
     function move() {
-        if (!marker._map) return;
+        if (!marker._map) {
+            if (map.hasLayer(droneTrail)) map.removeLayer(droneTrail);
+            return;
+        }
         const lat = marker.getLatLng().lat;
         const lng = marker.getLatLng().lng;
         const dLat = to[0] - lat;
         const dLng = to[1] - lng;
         const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+
+        // === Обновляем линию следа ===
+        const last = pathCoords[pathCoords.length - 1];
+        if (lat !== last.lat || lng !== last.lng) {
+            pathCoords.push(L.latLng(lat, lng));
+            droneTrail.setLatLngs(pathCoords);
+        }
 
         map.eachLayer(layer => {
             if (layer instanceof L.Circle && layer.options.color === '#ff0000ab') {
@@ -205,17 +216,10 @@ function launchDrone(from, to) {
 
         const isInUkraine = ukraineGeoJson && turf.booleanPointInPolygon(turf.point([lng, lat]), ukraineGeoJson);
 
-        if (!enteredUkraine && isInUkraine) {
-            enteredUkraine = true;
-            dronesEnteredUkraine++;
-            if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
-        }
-
         if (enteredUkraine && !isInUkraine) {
             if (!finished) {
                 finished = true;
                 if (dronesEnteredUkraine > 0) dronesEnteredUkraine--;
-                if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
                 marker.bindPopup("🛑 Drone stopped at border!");
                 showNotification({
                     image: 'images/geran.png',
@@ -226,16 +230,20 @@ function launchDrone(from, to) {
                 setTimeout(() => {
                     if (map.hasLayer(marker)) map.removeLayer(marker);
                     if (map.hasLayer(targetMarker)) map.removeLayer(targetMarker);
-                    if (dronePathPolyline && map.hasLayer(dronePathPolyline)) map.removeLayer(dronePathPolyline);
+                    if (map.hasLayer(droneTrail)) map.removeLayer(droneTrail);
                 }, 1500);
             }
             return;
         }
 
+        if (!enteredUkraine && isInUkraine) {
+            enteredUkraine = true;
+            dronesEnteredUkraine++;
+        }
+
         if (dist < 0.01 && enteredUkraine && !finished) {
             finished = true;
             if (dronesEnteredUkraine > 0) dronesEnteredUkraine--;
-            if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
             marker.setLatLng(to);
             marker.bindPopup("💥 Explosion!");
             showNotification({
@@ -248,7 +256,7 @@ function launchDrone(from, to) {
             setTimeout(() => {
                 if (map.hasLayer(marker)) map.removeLayer(marker);
                 if (map.hasLayer(targetMarker)) map.removeLayer(targetMarker);
-                if (dronePathPolyline && map.hasLayer(dronePathPolyline)) map.removeLayer(dronePathPolyline);
+                if (map.hasLayer(droneTrail)) map.removeLayer(droneTrail);
             }, 1500);
             return;
         }
@@ -289,19 +297,24 @@ function launchIskander(from, to) {
     let iskanderPathPolyline = trackIskanderPath(marker);
 
     const speed = 0.005;
-    const maneuverStrength = 0.08;
-    let maneuverAngle = 0;
     let enteredUkraine = false;
     let finished = false;
     marker._isIskander = true;
+
+    // Вычисляем угол один раз для прямолинейного движения
+    const dLat = to[0] - from[0];
+    const dLng = to[1] - from[1];
+    const distTotal = Math.sqrt(dLat * dLat + dLng * dLng);
+    const normLat = dLat / distTotal;
+    const normLng = dLng / distTotal;
 
     function move() {
         if (!marker._map) return;
         const lat = marker.getLatLng().lat;
         const lng = marker.getLatLng().lng;
-        const dLat = to[0] - lat;
-        const dLng = to[1] - lng;
-        const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+        const dLatCur = to[0] - lat;
+        const dLngCur = to[1] - lng;
+        const dist = Math.sqrt(dLatCur * dLatCur + dLngCur * dLngCur);
 
         map.eachLayer(layer => {
             if (layer instanceof L.Circle && layer.options.color === '#ff0000ab') {
@@ -340,19 +353,10 @@ function launchIskander(from, to) {
             return;
         }
 
-        let angle = Math.atan2(dLng, dLat);
-
-        if (isInUkraine) {
-            maneuverAngle += (Math.random() - 0.5) * maneuverStrength;
-            angle += maneuverAngle;
-        }
-
-        let normLat = Math.cos(angle);
-        let normLng = Math.sin(angle);
-
+        // Движение строго по прямой
         marker.setLatLng([lat + normLat * speed, lng + normLng * speed]);
 
-        const angleDeg = angle * (180 / Math.PI);
+        const angleDeg = Math.atan2(normLng, normLat) * (180 / Math.PI);
         const img = marker.getElement()?.querySelector('img');
         if (img) img.style.transform = `rotate(${angleDeg}deg)`;
 
@@ -528,7 +532,6 @@ function tryShootDownThreat(threatMarker, ppoCircle) {
                 });
                 if (threatMarker._isShahed && dronesEnteredUkraine > 0) {
                     dronesEnteredUkraine--;
-                    if (window.updateShahedCount) window.updateShahedCount(dronesEnteredUkraine);
                 }
                 if (map.hasLayer(threatMarker)) map.removeLayer(threatMarker);
             } else {

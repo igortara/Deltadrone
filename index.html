@@ -94,6 +94,7 @@
             display: none; /* скрыта по умолчанию */
             position: absolute;
             bottom: 20px;
+            opacity: 0.95;
             left: 20px;
             width: 260px;
             background: rgba(37,43,54,0.95);
@@ -107,6 +108,7 @@
             z-index: 2000;
         }
         #delta-header {
+            opacity: 0.65;
             background: #1e242f;
             padding: 10px 14px;
             display: flex;
@@ -118,10 +120,12 @@
         }
         #delta-header h4 {
             margin: 0;
+            
             font-size: 15px;
             letter-spacing: 0.5px;
         }
         #delta-toggle {
+            
             background: transparent;
             border: none;
             color: #aaa;
@@ -142,9 +146,38 @@
             font-weight: 500;
         }
         #delta-open {
+            
             position: absolute;
             bottom: 20px;
             left: 20px;
+            background: #252B36;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 2000;
+        }
+        #otboi {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #252B36;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 15px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 2000;
+        }
+        #trivoga {
+            position: absolute;
+            bottom: 60px;
+            right: 20px;
             background: #252B36;
             color: #fff;
             border: none;
@@ -177,7 +210,7 @@
                     <strong>Mobile Group</strong>
                     <p>Intercepts Shaheds</p>
                     <span class="price">100 💰</span>
-                    <button onclick="buyPPO('Mobile Group',100)">Buy</button>
+                    <button id="buy-aa" onclick="buyPPO('Mobile Group',100)">Buy</button>
                 </div>
             </div>
             <div class="shop-item">
@@ -223,6 +256,8 @@
         <div><strong>Lng:</strong> <span id="dp-lng">-</span></div>
       </div>
     </div>
+    <button id="trivoga" >🚨Air-Alert🔴</button>
+    <button id="otboi" >📢Off-The-Alert🟢</button>
     <button id="delta-open">🛰️ Delta</button>
 
     <!-- Скрипты -->
@@ -234,13 +269,17 @@
         const shopBtn = document.getElementById('shop-btn');
         const shopPanel = document.getElementById('shop-panel');
         const closeShop = document.getElementById('close-shop');
-
+        var trivoga = new Audio('povitrana-trivoga.mp3');
         shopBtn.onclick = () => { shopPanel.style.display = 'block'; };
         closeShop.onclick = () => { shopPanel.style.display = 'none'; };
 
         document.getElementById('buy-aa').onclick = () => {
             shopPanel.style.display = 'none';
             if (window.enablePPOPlacement) enablePPOPlacement("Mobile Group");
+        };
+        document.getElementById('trivoga').onclick = () => {
+          
+            trivoga.play();
         };
         document.getElementById('del-ppo').onclick = () => {
             shopPanel.style.display = 'none';
