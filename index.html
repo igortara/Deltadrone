@@ -11,104 +11,172 @@
 
     <style>
         html, body {
-            height: 100%; 
-            margin: 0;   
-            padding: 0;  
-            overflow: hidden; 
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif; /* Вернул стандартный шрифт */
         }
-
         #mapid {
             height: 100%;
             width: 100%;
         }
-
-        .drone-icon {
-            transform-origin: center center !important; 
-        }
-
-        /* ===== Сайдбар (Shop) ===== */
+        /* Магазин */
         #side-panel {
-            position: absolute;
-            top: 20px;
+            position: fixed;
+            top: 16px;
             right: 0;
-            width: 60px;
             z-index: 1000;
         }
         #shop-btn {
-            width: 60px;
-            height: 60px;
+            width: 56px;
+            height: 56px;
             background: #252B36;
             color: #fff;
             border: none;
-            border-radius: 10px 0 0 10px;
+            border-radius: 12px 0 0 12px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 22px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
         }
         #shop-panel {
             display: none;
-            position: absolute;
+            position: fixed;
             top: 0;
-            right: 60px;
-            width: 200px;
-            background: #252B36;
+            right: 0;
+            width: 340px;
+            max-width: 100vw;
+            height: 100vh;
+            background: #232837;
             color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            border-radius: 10px 0 0 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            padding: 16px;
+            font-family: Arial, Helvetica, sans-serif; /* Вернул стандартный шрифт */
+            border-radius: 0 0 0 0;
+            box-shadow: -2px 0 16px rgba(0,0,0,0.18);
+            padding: 0;
+            overflow-y: auto;
+            z-index: 2000;
+            transition: transform 0.25s;
+        }
+        #shop-panel.open {
+            display: block;
         }
         #shop-panel h3 {
-            margin-top: 0;
+            margin: 0;
+            padding: 18px 24px 8px 24px;
+            font-size: 22px;
+            letter-spacing: 0.5px;
         }
-        #shop-panel button {
-            display: block;
+        #resources {
+            padding: 0 24px 10px 24px;
+            font-size: 17px;
+        }
+        .shop-section {
+            padding: 0 24px 18px 24px;
+        }
+        .shop-section h4 {
+            margin: 12px 0 8px 0;
+            font-size: 17px;
+            color: #8ab4f8;
+        }
+        .shop-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 14px;
+            background: #252B36;
+            border-radius: 10px;
+            padding: 10px 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .shop-item img {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            margin-right: 14px;
+            object-fit: contain;
+            background: #181b24;
+        }
+        .shop-item .info {
+            flex: 1;
+        }
+        .shop-item strong {
+            font-size: 16px;
+            color: #fff;
+        }
+        .shop-item p {
+            margin: 2px 0 4px 0;
+            font-size: 13px;
+            color: #bfc4d1;
+        }
+        .shop-item .price {
+            font-size: 15px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .shop-item button {
+            margin-top: 6px;
             width: 100%;
-            background: #3a3f4b;
+            background: linear-gradient(90deg,#3a3f4b 60%,#4a90e2 100%);
             color: #fff;
             border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 8px 0;
-            padding: 8px;
-            font-size: 16px;
-        }
-
-        /* ===== Счётчик дронов ===== */
-        #shahed-count {
-            display: block;
-            margin: 12px auto 0 auto;
-            width: 56px;
-            text-align: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #252B36;
-            color: #cfcfcf;
             border-radius: 6px;
-            font-size: 15px;
-            font-weight: bold;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-            padding: 6px 0;
+            cursor: pointer;
+            padding: 10px 0;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.2s;
         }
-
-        /* ===== Delta Eye ===== */
+        .shop-item button:active {
+            background: #2e3440;
+        }
+        #close-shop {
+            width: 90%;
+            margin: 18px 5% 18px 5%;
+            background: #ff3b3b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 12px 0;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+        }
+        #close-shop:active {
+            background: #d32f2f;
+        }
+        /* Кнопки тревоги и Delta */
+        #trivoga, #otboi, #delta-open {
+            position: fixed;
+            right: 20px;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-size: 18px;
+            font-family: inherit;
+            color: #fff;
+            background: #252B36;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 2000;
+        }
+        #trivoga { bottom: 80px; }
+        #otboi { bottom: 20px; }
+        #delta-open { left: 20px; bottom: 20px; right: auto; }
+        /* Delta Eye */
         #delta-panel {
-            display: none; /* скрыта по умолчанию */
-            position: absolute;
+            position: fixed;
             bottom: 20px;
-            opacity: 0.95;
             left: 20px;
-            width: 260px;
-            background: rgba(37,43,54,0.95);
+            width: 92vw;
+            max-width: 340px;
+            background: rgba(37,43,54,0.97);
             color: #e0e0e0;
             border-radius: 12px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-            font-family: 'Segoe UI', sans-serif;
-            font-size: 14px;
-            flex-direction: column;
-            overflow: hidden;
+            font-family: Arial, Helvetica, sans-serif; /* Вернул стандартный шрифт */
+            font-size: 15px;
             z-index: 2000;
         }
         #delta-header {
-            opacity: 0.65;
             background: #1e242f;
             padding: 10px 14px;
             display: flex;
@@ -120,16 +188,14 @@
         }
         #delta-header h4 {
             margin: 0;
-            
-            font-size: 15px;
+            font-size: 16px;
             letter-spacing: 0.5px;
         }
         #delta-toggle {
-            
             background: transparent;
             border: none;
             color: #aaa;
-            font-size: 18px;
+            font-size: 22px;
             cursor: pointer;
             transition: color 0.2s;
         }
@@ -145,100 +211,99 @@
             color: #8ab4f8;
             font-weight: 500;
         }
-        #delta-open {
-            
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
+        /* Счётчик дронов */
+        #shahed-count {
+            display: block;
+            margin: 12px auto 0 auto;
+            width: 56px;
+            text-align: center;
             background: #252B36;
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 8px 14px;
+            color: #cfcfcf;
+            border-radius: 6px;
             font-size: 15px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            z-index: 2000;
+            font-weight: bold;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            padding: 6px 0;
         }
-        #otboi {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: #252B36;
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 8px 14px;
-            font-size: 15px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            z-index: 2000;
+        /* Мобильная адаптация */
+        @media (max-width: 600px) {
+            #shop-panel {
+                width: 100vw;
+                max-width: 100vw;
+                border-radius: 0;
+                padding: 0;
+            }
+            #side-panel {
+                top: 8px;
+            }
+            #shop-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+            #delta-panel {
+                left: 4vw;
+                width: 92vw;
+                max-width: 98vw;
+            }
+            #trivoga, #otboi, #delta-open {
+                font-size: 16px;
+                padding: 10px 12px;
+                right: 10px;
+                left: auto;
+            }
+            #delta-open {
+                left: 10px;
+                right: auto;
+            }
         }
-        #trivoga {
-            position: absolute;
-            bottom: 60px;
-            right: 20px;
-            background: #252B36;
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 8px 14px;
-            font-size: 15px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            z-index: 2000;
-        }
-        #delta-open:hover { background: #323844; }
     </style>
 </head>
 <body>
     <div id="mapid"></div>
 
-<!-- Магазин -->
-<div id="side-panel">
-    <button id="shop-btn">🛒</button>
-
-    <div id="shop-panel">
-        <h3>🛡️ Arsenal</h3>
-        <div id="resources">💰 <span id="player-money">500</span></div>
-
-        <div class="shop-section">
-            <h4>Air Defense</h4>
-            <div class="shop-item">
-                <img src="images/Pvo/mobile-group.png" alt="Mobile Group">
-                <div class="info">
-                    <strong>Mobile Group</strong>
-                    <p>Intercepts Shaheds</p>
-                    <span class="price">100 💰</span>
-                    <button id="buy-aa" onclick="buyPPO('Mobile Group',100)">Buy</button>
+    <!-- Магазин -->
+    <div id="side-panel">
+        <button id="shop-btn">🛒</button>
+        <div id="shop-panel">
+            <h3>🛡️ Arsenal</h3>
+            <div id="resources">💰 <span id="player-money">500</span></div>
+            <div class="shop-section">
+                <h4>Air Defense</h4>
+                <div class="shop-item">
+                    <img src="images/Pvo/mobile-group.png" alt="Mobile Group">
+                    <div class="info">
+                        <strong>Mobile Group</strong>
+                        <p>Intercepts Shaheds</p>
+                        <span class="price">100 💰</span>
+                        <button id="buy-aa">Buy</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <img src="images/Pvo/patriot.png" alt="Patriot">
+                    <div class="info">
+                        <strong>Patriot</strong>
+                        <p>Intercepts Shaheds & Iskanders</p>
+                        <span class="price">400 💰</span>
+                        <button id="buy-patriot">Buy</button>
+                    </div>
                 </div>
             </div>
-            <div class="shop-item">
-                <img src="images/Pvo/patriot.png" alt="Patriot">
-                <div class="info">
-                    <strong>Patriot</strong>
-                    <p>Intercepts Shaheds & Iskanders</p>
-                    <span class="price">400 💰</span>
-                    <button onclick="buyPPO('Patriot',400)">Buy</button>
+            <div class="shop-section">
+                <h4>Drones</h4>
+                <div class="shop-item">
+                    <img src="images/geran.png" alt="Shahed">
+                    <div class="info">
+                        <strong>Shahed</strong>
+                        <p>Test launch</p>
+                        <span class="price">50 💰</span>
+                        <button id="buy-drone">Buy</button>
+                    </div>
                 </div>
             </div>
+            <button id="close-shop">Close</button>
         </div>
-
-        <div class="shop-section">
-            <h4>Drones</h4>
-            <div class="shop-item">
-                <img src="images/geran.png" alt="Shahed">
-                <div class="info">
-                    <strong>Shahed</strong>
-                    <p>Test launch</p>
-                    <span class="price">50 💰</span>
-                </div>
-            </div>
-        </div>
-
-        <button id="close-shop">Close</button>
     </div>
-</div>
 
     <!-- Панель Delta Eye -->
     <div id="delta-panel">
@@ -256,43 +321,37 @@
         <div><strong>Lng:</strong> <span id="dp-lng">-</span></div>
       </div>
     </div>
-    <button id="trivoga" >🚨Air-Alert🔴</button>
-    <button id="otboi" >📢Off-The-Alert🟢</button>
+    <button id="trivoga">🚨Air-Alert🔴</button>
+    <button id="otboi">📢Off-The-Alert🟢</button>
     <button id="delta-open">🛰️ Delta</button>
 
     <!-- Скрипты -->
     <script src="js/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
     <script src="js/game.js"></script>
-
     <script>
         const shopBtn = document.getElementById('shop-btn');
         const shopPanel = document.getElementById('shop-panel');
         const closeShop = document.getElementById('close-shop');
         var trivoga = new Audio('povitrana-trivoga.mp3');
-        shopBtn.onclick = () => { shopPanel.style.display = 'block'; };
-        closeShop.onclick = () => { shopPanel.style.display = 'none'; };
+        shopBtn.onclick = () => { shopPanel.classList.add('open'); };
+        closeShop.onclick = () => { shopPanel.classList.remove('open'); };
 
         document.getElementById('buy-aa').onclick = () => {
-            shopPanel.style.display = 'none';
+            shopPanel.classList.remove('open');
             if (window.enablePPOPlacement) enablePPOPlacement("Mobile Group");
         };
-        document.getElementById('trivoga').onclick = () => {
-          
-            trivoga.play();
-        };
-        document.getElementById('del-ppo').onclick = () => {
-            shopPanel.style.display = 'none';
-            if (window.enablePPODeleteMode) enablePPODeleteMode();
+        document.getElementById('buy-patriot').onclick = () => {
+            shopPanel.classList.remove('open');
+            if (window.enablePPOPlacement) enablePPOPlacement("Patriot");
         };
         document.getElementById('buy-drone').onclick = () => {
-            shopPanel.style.display = 'none';
+            shopPanel.classList.remove('open');
             if (window.spawnShahed) spawnShahed();
         };
-
-        function updateShahedCount(count) {
-            document.getElementById('shahed-count').textContent = count;
-        }
+        document.getElementById('trivoga').onclick = () => {
+            trivoga.play();
+        };
     </script>
 </body>
 </html>

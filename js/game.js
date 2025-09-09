@@ -197,16 +197,12 @@ function launchDrone(from, to) {
         }
         const lat = marker.getLatLng().lat;
         const lng = marker.getLatLng().lng;
+        // Добавьте эти строки:
         const dLat = to[0] - lat;
         const dLng = to[1] - lng;
         const dist = Math.sqrt(dLat * dLat + dLng * dLng);
 
-        // === Обновляем линию следа ===
-        const last = pathCoords[pathCoords.length - 1];
-        if (lat !== last.lat || lng !== last.lng) {
-            pathCoords.push(L.latLng(lat, lng));
-            droneTrail.setLatLngs(pathCoords);
-        }
+        // ...остальной код...
 
         map.eachLayer(layer => {
             if (layer instanceof L.Circle && layer.options.color === '#ff0000ab') {
