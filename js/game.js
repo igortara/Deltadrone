@@ -503,11 +503,7 @@ function tryShootDownThreat(threatMarker, ppoCircle) {
                         duration: 2500
                     });
                 } else {
-                    if (ppoType.name === "Patriot" || ppoType.name === "SAMP/T") {
-                        successRate = 0.6;
-                    } else {
-                        successRate = 0.1;
-                    }
+                    successRate = (ppoType.name === "Patriot" || ppoType.name === "SAMP/T") ? 0.6 : 0.1;
                 }
             } else if (threatMarker._isShahed) {
                 if (ppoType.name === "Patriot" || ppoType.name === "SAMP/T") {
@@ -516,6 +512,15 @@ function tryShootDownThreat(threatMarker, ppoCircle) {
                     successRate = 0.7;
                 } else if (ppoType.name === "Mobile Group") {
                     successRate = 0.8;
+                }
+            } else if (threatMarker._isKalibr) {
+                targetType = "Kalibr";
+                if (ppoType.name === "Patriot" || ppoType.name === "SAMP/T" || ppoType.name === "NASAMS") {
+                    successRate = 0.7;
+                } else if (ppoType.name === "Buk-M1" || ppoType.name === "S-300") {
+                    successRate = 0.4;
+                } else {
+                    successRate = 0.1;
                 }
             }
 
@@ -526,16 +531,22 @@ function tryShootDownThreat(threatMarker, ppoCircle) {
                     description: `${targetType} successfully intercepted!`,
                     duration: 2500
                 });
-                if (threatMarker._isShahed && dronesEnteredUkraine > 0) {
-                    dronesEnteredUkraine--;
-                }
-                if (map.hasLayer(threatMarker)) map.removeLayer(threatMarker);
+
+                // 🚀 Запуск ракеты ПВО (анимация)
+                launchInterceptor([ppoPos.lat, ppoPos.lng], [threatPos.lat, threatPos.lng]);
+
+                // Удаляем цель чуть позже, чтобы ракета успела "долететь"
+                setTimeout(() => {
+                    if (threatMarker._isShahed && dronesEnteredUkraine > 0) {
+                        dronesEnteredUkraine--;
+                    }
+                    if (map.hasLayer(threatMarker)) map.removeLayer(threatMarker);
+                }, 600);
             } else {
                 showNotification({
                     image: ppoType.image,
                     title: `${ppoType.name} missed!`,
-                    description: `${targetType} evaded interception.`
-,
+                    description: `${targetType} evaded interception.`,
                     duration: 2000
                 });
                 threatMarker._ppoTargeting = false;
@@ -545,6 +556,7 @@ function tryShootDownThreat(threatMarker, ppoCircle) {
         }
     }, threatMarker._isIskander ? 1500 : 1000);
 }
+
 
 function getDronesEnteredUkraine() {
     return dronesEnteredUkraine;
