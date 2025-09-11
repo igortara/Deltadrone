@@ -846,3 +846,46 @@ function drawDronePath(startCoords, endCoords, options = {}) {
 
     return path;
 }
+
+function launchInterceptor(from, to, image = "images/interceptor.png") {
+    const interceptorIcon = L.divIcon({
+        className: "interceptor-icon",
+        html: `<img src="${image}" width="16" height="16" />`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+
+    const marker = L.marker(from, { icon: interceptorIcon }).addTo(map);
+
+    const speed = 0.01; // скорость полёта ракеты
+    let finished = false;
+
+    const dLat = to[0] - from[0];
+    const dLng = to[1] - from[1];
+    const distTotal = Math.sqrt(dLat * dLat + dLng * dLng);
+    const normLat = dLat / distTotal;
+    const normLng = dLng / distTotal;
+
+    function move() {
+        if (!marker._map || finished) return;
+
+        const lat = marker.getLatLng().lat;
+        const lng = marker.getLatLng().lng;
+        const dLatCur = to[0] - lat;
+        const dLngCur = to[1] - lng;
+        const dist = Math.sqrt(dLatCur * dLatCur + dLngCur * dLngCur);
+
+        if (dist < 0.01) {
+            finished = true;
+            createExplosionCircle(to, 800, "#ffff00"); // эффект взрыва
+            if (map.hasLayer(marker)) map.removeLayer(marker);
+            return;
+        }
+
+        marker.setLatLng([lat + normLat * speed, lng + normLng * speed]);
+
+        requestAnimationFrame(move);
+    }
+
+    move();
+}
