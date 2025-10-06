@@ -157,8 +157,8 @@
 
 /* --- фиксим смещение панели --- */
 #delta-ui {
-  left: 25%;
-  transform: translateX(-25%);
+  left: 10%;
+  transform: translateX(-10%);
   max-width: 100vw;
 }
 
@@ -169,6 +169,7 @@
   left: 50% !important;
   transform: translateX(-50%) !important;
 }
+
 
 
 
