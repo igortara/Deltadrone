@@ -28,6 +28,7 @@ const launchPoints = [
     { name: "Belgorod", coords: [50.6056, 36.5778], type: "iskander" },
     { name: "Voronezh", coords: [51.6607, 39.2003], type: "iskander" },
     { name: "Primorsko-Akhtarsk", coords: [46.043509, 38.177654], type: "shahed" },
+    { name: "Black Sea", coords: [44.5, 36.5], type: "kalibr" },
 ];
 
 // === Переменные для Украины и шахедов ===
@@ -901,8 +902,6 @@ function launchInterceptor(from, to, image = "images/interceptor.png") {
 
     move();
 }
-
-{ name: "Black Sea", coords: [44.5, 36.5], type: "kalibr" },
 
 function launchKalibr(from, to) {
     const kalibrIcon = L.divIcon({
