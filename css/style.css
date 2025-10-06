@@ -154,3 +154,19 @@
 .shop-item button:hover {
   background: #265dbe;
 }
+
+/* --- фиксим смещение панели --- */
+#delta-ui {
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 100vw;
+}
+
+/* --- уведомления теперь ниже панели --- */
+#notification-container {
+  top: 90px !important; /* чуть ниже панели */
+  z-index: 4500 !important; /* чтобы были над всем */
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
