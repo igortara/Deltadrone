@@ -1,357 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deltadrone</title>
-    <meta name="description" content="Deltadrone - Гра про військову програму Delta">
-    <meta name="keywords" content="Deltadrone, гра, військова програма, Delta">
-    <link rel="stylesheet" href="leaflet.css">
-    <link rel="stylesheet" href="css/style.css">
+<!-- ======= DELTA EYE COMMAND BAR ======= -->
+<div id="delta-ui">
+  <div id="ui-left">
+    <div class="logo">🛰️ DELTA EYE</div>
+    <div class="status">System: <span class="ok">ONLINE</span></div>
+  </div>
+  <div id="ui-center">
+    <div class="metric">🛡️ Air Defense: <span id="ui-pvo">3</span></div>
+    <div class="metric">🚀 Active Targets: <span id="ui-drones">12</span></div>
+    <div class="metric">💰 Funds: <span id="ui-money">500</span></div>
+  </div>
+  <div id="ui-right">
+    <button id="alert-btn" class="btn">🚨 ALERT</button>
+    <button id="delta-btn" class="btn">Δ Delta</button>
+  </div>
+</div>
 
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: Arial, Helvetica, sans-serif; /* Вернул стандартный шрифт */
-        }
-        #mapid {
-            height: 100%;
-            width: 100%;
-        }
-        /* Магазин */
-        #side-panel {
-            position: fixed;
-            top: 16px;
-            right: 0;
-            z-index: 1000;
-        }
-        #shop-btn {
-            width: 56px;
-            height: 56px;
-            background: #252B36;
-            color: #fff;
-            border: none;
-            border-radius: 12px 0 0 12px;
-            cursor: pointer;
-            font-size: 22px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-        }
-        #shop-panel {
-            display: none;
-            position: fixed;
-            top: 0;
-            right: 0;
-            width: 340px;
-            max-width: 100vw;
-            height: 100vh;
-            background: #232837;
-            color: #fff;
-            font-family: Arial, Helvetica, sans-serif; /* Вернул стандартный шрифт */
-            border-radius: 0 0 0 0;
-            box-shadow: -2px 0 16px rgba(0,0,0,0.18);
-            padding: 0;
-            overflow-y: auto;
-            z-index: 2000;
-            transition: transform 0.25s;
-        }
-        #shop-panel.open {
-            display: block;
-        }
-        #shop-panel h3 {
-            margin: 0;
-            padding: 18px 24px 8px 24px;
-            font-size: 22px;
-            letter-spacing: 0.5px;
-        }
-        #resources {
-            padding: 0 24px 10px 24px;
-            font-size: 17px;
-        }
-        .shop-section {
-            padding: 0 24px 18px 24px;
-        }
-        .shop-section h4 {
-            margin: 12px 0 8px 0;
-            font-size: 17px;
-            color: #8ab4f8;
-        }
-        .shop-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 14px;
-            background: #252B36;
-            border-radius: 10px;
-            padding: 10px 12px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        }
-        .shop-item img {
-            width: 48px;
-            height: 48px;
-            border-radius: 8px;
-            margin-right: 14px;
-            object-fit: contain;
-            background: #181b24;
-        }
-        .shop-item .info {
-            flex: 1;
-        }
-        .shop-item strong {
-            font-size: 16px;
-            color: #fff;
-        }
-        .shop-item p {
-            margin: 2px 0 4px 0;
-            font-size: 13px;
-            color: #bfc4d1;
-        }
-        .shop-item .price {
-            font-size: 15px;
-            color: #ffd700;
-            font-weight: bold;
-        }
-        .shop-item button {
-            margin-top: 6px;
-            width: 100%;
-            background: linear-gradient(90deg,#3a3f4b 60%,#4a90e2 100%);
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            padding: 10px 0;
-            font-size: 16px;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-        .shop-item button:active {
-            background: #2e3440;
-        }
-        #close-shop {
-            width: 90%;
-            margin: 18px 5% 18px 5%;
-            background: #ff3b3b;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            padding: 12px 0;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-        }
-        #close-shop:active {
-            background: #d32f2f;
-        }
-        /* Кнопки тревоги и Delta */
-        #trivoga, #otboi, #delta-open {
-            position: fixed;
-            right: 20px;
-            border: none;
-            border-radius: 10px;
-            padding: 12px 18px;
-            font-size: 18px;
-            font-family: inherit;
-            color: #fff;
-            background: #252B36;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            z-index: 2000;
-        }
-        #trivoga { bottom: 80px; }
-        #otboi { bottom: 20px; }
-        #delta-open { left: 20px; bottom: 20px; right: auto; }
-        /* Delta Eye */
-        #delta-panel {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 92vw;
-            max-width: 340px;
-            background: rgba(37,43,54,0.97);
-            color: #e0e0e0;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-            font-family: Arial, Helvetica, sans-serif; /* Вернул стандартный шрифт */
-            font-size: 15px;
-            z-index: 2000;
-        }
-        #delta-header {
-            background: #1e242f;
-            padding: 10px 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-weight: bold;
-            color: #fff;
-            border-bottom: 1px solid #2e3440;
-        }
-        #delta-header h4 {
-            margin: 0;
-            font-size: 16px;
-            letter-spacing: 0.5px;
-        }
-        #delta-toggle {
-            background: transparent;
-            border: none;
-            color: #aaa;
-            font-size: 22px;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        #delta-toggle:hover { color: #fff; }
-        #delta-body {
-            padding: 12px 16px;
-            display: grid;
-            grid-template-columns: 90px auto;
-            row-gap: 8px;
-            column-gap: 10px;
-        }
-        #delta-body strong {
-            color: #8ab4f8;
-            font-weight: 500;
-        }
-        /* Счётчик дронов */
-        #shahed-count {
-            display: block;
-            margin: 12px auto 0 auto;
-            width: 56px;
-            text-align: center;
-            background: #252B36;
-            color: #cfcfcf;
-            border-radius: 6px;
-            font-size: 15px;
-            font-weight: bold;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-            padding: 6px 0;
-        }
-        /* Мобильная адаптация */
-        @media (max-width: 600px) {
-            #shop-panel {
-                width: 100vw;
-                max-width: 100vw;
-                border-radius: 0;
-                padding: 0;
-            }
-            #side-panel {
-                top: 8px;
-            }
-            #shop-btn {
-                width: 48px;
-                height: 48px;
-                font-size: 20px;
-            }
-            #delta-panel {
-                left: 4vw;
-                width: 92vw;
-                max-width: 98vw;
-            }
-            #trivoga, #otboi, #delta-open {
-                font-size: 16px;
-                padding: 10px 12px;
-                right: 10px;
-                left: auto;
-            }
-            #delta-open {
-                left: 10px;
-                right: auto;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div id="mapid"></div>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&display=swap');
 
-    <!-- Магазин -->
-    <div id="side-panel">
-        <button id="shop-btn">🛒</button>
-        <div id="shop-panel">
-            <h3>🛡️ Arsenal</h3>
-            <div id="resources">💰 <span id="player-money">500</span></div>
-            <div class="shop-section">
-                <h4>Air Defense</h4>
-                <div class="shop-item">
-                    <img src="images/Pvo/mobile-group.png" alt="Mobile Group">
-                    <div class="info">
-                        <strong>Mobile Group</strong>
-                        <p>Intercepts Shaheds</p>
-                        <span class="price">100 💰</span>
-                        <button id="buy-aa">Buy</button>
-                    </div>
-                </div>
-                <div class="shop-item">
-                    <img src="images/Pvo/patriot.png" alt="Patriot">
-                    <div class="info">
-                        <strong>Patriot</strong>
-                        <p>Intercepts Shaheds & Iskanders</p>
-                        <span class="price">400 💰</span>
-                        <button id="buy-patriot">Buy</button>
-                    </div>
-                </div>
-            </div>
-            <div class="shop-section">
-                <h4>Drones</h4>
-                <div class="shop-item">
-                    <img src="images/geran.png" alt="Shahed">
-                    <div class="info">
-                        <strong>Shahed</strong>
-                        <p>Test launch</p>
-                        <span class="price">50 💰</span>
-                        <button id="buy-drone">Buy</button>
-                    </div>
-                </div>
-            </div>
-            <button id="close-shop">Close</button>
-        </div>
-    </div>
+#delta-ui {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 68px;
+  background: rgba(20, 22, 27, 0.95);
+  border-bottom: 1px solid #2a2f39;
+  color: #e0e3ea;
+  font-family: 'Roboto Mono', monospace;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  z-index: 4000;
+}
 
-    <!-- Панель Delta Eye -->
-    <div id="delta-panel">
-      <div id="delta-header">
-        <h4>Delta Eye</h4>
-        <button id="delta-toggle">×</button>
-      </div>
-      <div id="delta-body">
-        <div><strong>Model:</strong> <span id="dp-model">-</span></div>
-        <div><strong>Callsign:</strong> <span id="dp-name">-</span></div>
-        <div><strong>Speed:</strong> <span id="dp-speed">-</span> km/h</div>
-        <div><strong>Altitude:</strong> <span id="dp-altitude">-</span> m</div>
-        <div><strong>Heading:</strong> <span id="dp-heading">-</span>°</div>
-        <div><strong>Lat:</strong> <span id="dp-lat">-</span></div>
-        <div><strong>Lng:</strong> <span id="dp-lng">-</span></div>
-      </div>
-    </div>
-    <button id="trivoga">🚨Air-Alert🔴</button>
-    <button id="otboi">📢Off-The-Alert🟢</button>
-    <button id="delta-open">🛰️ Delta</button>
+/* Левая секция */
+#ui-left {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+#ui-left .logo {
+  font-size: 20px;
+  font-weight: 600;
+  color: #8ab4f8;
+}
+#ui-left .status {
+  font-size: 13px;
+  color: #a0a7b3;
+}
+.status .ok {
+  color: #66ff99;
+  font-weight: 600;
+}
 
-    <!-- Скрипты -->
-    <script src="js/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-    <script src="js/game.js"></script>
-    <script>
-        const shopBtn = document.getElementById('shop-btn');
-        const shopPanel = document.getElementById('shop-panel');
-        const closeShop = document.getElementById('close-shop');
-        var trivoga = new Audio('povitrana-trivoga.mp3');
-        shopBtn.onclick = () => { shopPanel.classList.add('open'); };
-        closeShop.onclick = () => { shopPanel.classList.remove('open'); };
+/* Центр — метрики */
+#ui-center {
+  display: flex;
+  gap: 40px;
+}
+.metric {
+  font-size: 15px;
+  color: #c8ccd7;
+}
 
-        document.getElementById('buy-aa').onclick = () => {
-            shopPanel.classList.remove('open');
-            if (window.enablePPOPlacement) enablePPOPlacement("Mobile Group");
-        };
-        document.getElementById('buy-patriot').onclick = () => {
-            shopPanel.classList.remove('open');
-            if (window.enablePPOPlacement) enablePPOPlacement("Patriot");
-        };
-        document.getElementById('buy-drone').onclick = () => {
-            shopPanel.classList.remove('open');
-            if (window.spawnShahed) spawnShahed();
-        };
-        document.getElementById('trivoga').onclick = () => {
-            trivoga.play();
-        };
-    </script>
-</body>
-</html>
+/* Правая часть */
+#ui-right {
+  display: flex;
+  gap: 12px;
+}
+.btn {
+  background: #252b36;
+  border: 1px solid #353b48;
+  color: #d0d4da;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  font-size: 14px;
+}
+.btn:hover {
+  background: #2f3542;
+  transform: translateY(-2px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Тень при наведении */
+#delta-ui:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+}
+</style>
