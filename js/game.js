@@ -901,3 +901,109 @@ function launchInterceptor(from, to, image = "images/interceptor.png") {
 
     move();
 }
+
+{ name: "Black Sea", coords: [44.5, 36.5], type: "kalibr" },
+
+function launchKalibr(from, to) {
+    const kalibrIcon = L.divIcon({
+        className: "kalibr-icon",
+        html: `<img src="images/kalibr.png" width="28" height="28" />`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+    });
+
+    const marker = L.marker(from, { icon: kalibrIcon }).addTo(map);
+    const targetMarker = L.marker(to).addTo(map);
+
+    let enteredUkraine = false;
+    let finished = false;
+
+    const speed = 0.0015; // медленнее чем Искандер
+    const maneuverStrength = 0.04;
+    let maneuverAngle = 0;
+    const dLat = to[0] - from[0];
+    const dLng = to[1] - from[1];
+    const distTotal = Math.sqrt(dLat * dLat + dLng * dLng);
+    const normLat = dLat / distTotal;
+    const normLng = dLng / distTotal;
+
+    // === Траектория ===
+    const pathCoords = [L.latLng(from[0], from[1])];
+    const kalibrTrail = L.polyline(pathCoords, {
+        color: '#00bfff',
+        weight: 2,
+        opacity: 0.8,
+        dashArray: '4, 4'
+    }).addTo(map);
+
+    marker._isKalibr = true;
+
+    function move() {
+        if (!marker._map) return;
+        const lat = marker.getLatLng().lat;
+        const lng = marker.getLatLng().lng;
+
+        // Проверка на попадание в радиус ПВО
+        map.eachLayer(layer => {
+            if (layer instanceof L.Circle && layer.options.color === '#ff0000ab') {
+                tryShootDownThreat(marker, layer);
+            }
+        });
+
+        const isInUkraine = ukraineGeoJson && turf.booleanPointInPolygon(turf.point([lng, lat]), ukraineGeoJson);
+        if (!enteredUkraine && isInUkraine) {
+            enteredUkraine = true;
+            showNotification({
+                image: 'images/kalibr.png',
+                title: 'Kalibr entered Ukraine!',
+                description: 'A cruise missile has entered Ukrainian airspace.',
+                duration: 3500
+            });
+        }
+
+        // Конец маршрута
+        const distToTarget = Math.sqrt((to[0]-lat)**2 + (to[1]-lng)**2);
+        if (distToTarget < 0.005 && !finished) {
+            finished = true;
+            showNotification({
+                image: 'images/kalibr.png',
+                title: 'Kalibr impact!',
+                description: 'A Kalibr missile hit its target.',
+                duration: 4000
+            });
+            createExplosionCircle(to, 2000, '#00bfff');
+            if (map.hasLayer(marker)) map.removeLayer(marker);
+            if (map.hasLayer(targetMarker)) map.removeLayer(targetMarker);
+            if (map.hasLayer(kalibrTrail)) map.removeLayer(kalibrTrail);
+            return;
+        }
+
+        // Плавное движение с "манёврами"
+        maneuverAngle += (Math.random() - 0.5) * maneuverStrength;
+        const latStep = normLat * speed + maneuverAngle * 0.0001;
+        const lngStep = normLng * speed + maneuverAngle * 0.0001;
+
+        marker.setLatLng([lat + latStep, lng + lngStep]);
+        pathCoords.push(marker.getLatLng());
+        kalibrTrail.setLatLngs(pathCoords);
+
+        requestAnimationFrame(move);
+    }
+
+    move();
+}
+
+if (rand < 0.3) isIskander = true;
+
+let threatType = "shahed";
+if (rand < 0.2) threatType = "iskander";
+else if (rand < 0.4) threatType = "kalibr";
+
+if (threatType === "iskander") {
+    launchIskander(start.coords, target);
+} else if (threatType === "kalibr") {
+    launchKalibr(start.coords, target);
+} else {
+    launchDrone(start.coords, target);
+}
+
