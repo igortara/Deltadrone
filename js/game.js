@@ -1314,3 +1314,11 @@ function spawnAllRadars() {
 spawnAllRadars();
 updateMoneyUI();
 // ----------------------- Radar Centers: End -----------------------
+
+map.on('zoomend', () => {
+  const zoom = map.getZoom();
+  const scale = Math.max(0.4, Math.min(1, (zoom - 5) / 5)); // от 0.4 до 1
+  const size = 24 * scale;
+  shahedIcon.options.iconSize = [size, size];
+  shahedIcon.options.iconAnchor = [size / 2, size / 2];
+});
