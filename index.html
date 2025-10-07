@@ -221,6 +221,10 @@ html, body {
     </div>
   </div>
 
+<div id="ui-right">
+  <button class="btn" id="toggle-ranges-btn">👁️ Show Ranges</button>
+</div>
+
   <!-- ===== Карта ===== -->
   <div id="mapid"></div>
 
@@ -312,3 +316,23 @@ html, body {
   </script>
 
 </body>
+
+<script>
+let showPpoRanges = false;
+
+function togglePpoRanges() {
+  showPpoRanges = !showPpoRanges;
+  document.getElementById('toggle-ranges-btn').textContent = showPpoRanges ? "🙈 Hide Ranges" : "👁️ Show Ranges";
+
+  map.eachLayer(layer => {
+    if (layer instanceof L.Circle && layer._ppoType) {
+      layer.setStyle({
+        opacity: showPpoRanges ? 0.15 : 0,
+        fillOpacity: showPpoRanges ? 0.05 : 0
+      });
+    }
+  });
+}
+
+document.getElementById('toggle-ranges-btn').onclick = togglePpoRanges;
+</script>
