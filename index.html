@@ -175,7 +175,7 @@
 </head>
 <body>
 
-  <!-- ===== Верхняя панель ===== -->
+  <!-- ===== Верхняя панель DELTA EYE ===== -->
   <div id="delta-ui">
     <div id="ui-left">
       <div class="logo">🛰️ DELTA EYE</div>
@@ -186,8 +186,6 @@
       <div class="metric">🚀 Active Targets: <span id="ui-drones">12</span></div>
       <div class="metric">💰 Funds: <span id="ui-money">500</span></div>
     </div>
-    <div id="ui-right">
-    </div>
   </div>
 
   <!-- ===== Карта ===== -->
@@ -197,10 +195,12 @@
   <div id="side-panel">
     <button id="shop-btn">🛒</button>
     <div id="shop-panel">
-      <h3>🛡️ Arsenal</h3>
-      <div id="resources">💰 <span id="player-money">500</span></div>
+      <h3 style="margin:16px;">🛡️ Arsenal</h3>
+      <div id="resources" style="padding:0 16px;">💰 <span id="player-money">500</span></div>
+
       <div class="shop-section">
         <h4>Air Defense</h4>
+
         <div class="shop-item">
           <img src="images/Pvo/mobile-group.png" alt="Mobile Group">
           <div class="info">
@@ -210,6 +210,7 @@
             <button id="buy-aa">Buy</button>
           </div>
         </div>
+
         <div class="shop-item">
           <img src="images/Pvo/patriot.png" alt="Patriot">
           <div class="info">
@@ -220,6 +221,7 @@
           </div>
         </div>
       </div>
+
       <div class="shop-section">
         <h4>Drones</h4>
         <div class="shop-item">
@@ -232,21 +234,35 @@
           </div>
         </div>
       </div>
-      <button id="close-shop">Close</button>
+
+      <button id="close-shop" style="margin:16px; padding:8px 12px;">Close</button>
     </div>
+  </div>
+
+  <!-- ===== Нижняя панель (информация о цели) ===== -->
+  <div id="delta-panel" style="display:none;">
+    <div><strong>Model:</strong> <span id="dp-model">—</span></div>
+    <div><strong>Name:</strong> <span id="dp-name">—</span></div>
+    <div><strong>Speed:</strong> <span id="dp-speed">—</span> km/h</div>
+    <div><strong>Altitude:</strong> <span id="dp-altitude">—</span> m</div>
+    <div><strong>Heading:</strong> <span id="dp-heading">—</span>°</div>
+    <div><strong>Lat:</strong> <span id="dp-lat">—</span></div>
+    <div><strong>Lng:</strong> <span id="dp-lng">—</span></div>
   </div>
 
   <!-- ===== Скрипты ===== -->
   <script src="js/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
   <script src="js/game.js"></script>
+  <script src="js/effects.js"></script>
+
   <script>
     const shopBtn = document.getElementById('shop-btn');
     const shopPanel = document.getElementById('shop-panel');
     const closeShop = document.getElementById('close-shop');
-    var trivoga = new Audio('povitrana-trivoga.mp3');
-    shopBtn.onclick = () => { shopPanel.classList.add('open'); };
-    closeShop.onclick = () => { shopPanel.classList.remove('open'); };
+
+    shopBtn.onclick = () => shopPanel.classList.add('open');
+    closeShop.onclick = () => shopPanel.classList.remove('open');
 
     document.getElementById('buy-aa').onclick = () => {
       shopPanel.classList.remove('open');
@@ -260,9 +276,6 @@
       shopPanel.classList.remove('open');
       if (window.spawnShahed) spawnShahed();
     };
-    document.getElementById('trivoga').onclick = () => {
-      trivoga.play();
-    };
   </script>
+
 </body>
-</html>
