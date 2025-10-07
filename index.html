@@ -208,19 +208,6 @@ html, body {
 </head>
 <body>
 
-  <!-- ===== Верхняя панель DELTA EYE ===== -->
-  <div id="delta-ui">
-    <div id="ui-left">
-      <div class="logo">🛰️ DELTA EYE</div>
-      <div class="status">System: <span class="ok">ONLINE</span></div>
-    </div>
-    <div id="ui-center">
-      <div class="metric">🛡️ Air Defense: <span id="ui-pvo">3</span></div>
-      <div class="metric">🚀 Active Targets: <span id="ui-drones">12</span></div>
-      <div class="metric">💰 Funds: <span id="ui-money">500</span></div>
-    </div>
-  </div>
-
 <div id="ui-right">
   <button class="btn" id="toggle-ranges-btn">👁️ Show Ranges</button>
 </div>
@@ -316,23 +303,3 @@ html, body {
   </script>
 
 </body>
-
-<script>
-let showPpoRanges = false;
-
-function togglePpoRanges() {
-  showPpoRanges = !showPpoRanges;
-  document.getElementById('toggle-ranges-btn').textContent = showPpoRanges ? "🙈 Hide Ranges" : "👁️ Show Ranges";
-
-  map.eachLayer(layer => {
-    if (layer instanceof L.Circle && layer._ppoType) {
-      layer.setStyle({
-        opacity: showPpoRanges ? 0.15 : 0,
-        fillOpacity: showPpoRanges ? 0.05 : 0
-      });
-    }
-  });
-}
-
-document.getElementById('toggle-ranges-btn').onclick = togglePpoRanges;
-</script>
