@@ -191,6 +191,124 @@ function launchDrone(from, to) {
         dashArray: '5, 5'
     }).addTo(map);
 
+    // -------------------- Airfield launch notifications & scheduled spawns --------------------
+
+// 1) Иконка неизвестной цели (если не объявлена раньше)
+const ICON_UNKNOWN = L.icon({
+  iconUrl: 'images/unknown_target.png', // замени путь, если у тебя другое имя
+  iconSize: [20, 20],
+  iconAnchor: [10, 10]
+});
+
+// 2) Обязательно: чтобы мы могли получить маркер от launchDrone, верни его.
+// Найди конец функции launchDrone(...) и добавь сразу после вызова move(); строку:
+//    return marker;
+// (Если уже есть return — оставь.)
+//
+// Пример: (внутри launchDrone, в самом конце)
+//    move();
+//    return marker;
+
+// 3) Функции уведомления + последовательного запуска группы из аэродрома
+function notifyAirfieldLaunch(airfield, count = 3, delayBetween = 800) {
+  // Показываем уведомление о пуске
+  showNotification({
+    image: 'images/rocket-launch.png', // или любая иконка уведомления
+    title: `Launch from ${airfield.name}`,
+    description: `${count} targets launched from ${airfield.name}`,
+    duration: 3500
+  });
+
+  // Через небольшой таймаут начнём реальную отправку дронов (даём время для "уведомления")
+  setTimeout(() => {
+    spawnAirfieldGroup(airfield, count, delayBetween);
+  }, 800);
+}
+
+/**
+ * spawnAirfieldGroup - запустить группу дронов/ракeт с аэродрома
+ * - airfield: объект из launchPoints
+ * - count: кол-во единиц
+ * - delayBetween: ms между запусками
+ *
+ * Стартуем от координат аэродрома (airfield.coords) и летим к случайным точкам внутри Украины.
+ * При создании каждый маркер помечается: _fromAirfield = true, _spawnTime, _isDetected = false, и получает ICON_UNKNOWN.
+ */
+async function spawnAirfieldGroup(airfield, count = 3, delayBetween = 800) {
+  // если гео-границы Украины не загружены — отмена
+  if (!ukraineGeoJson) {
+    console.warn("Ukraine geojson not loaded — cannot spawn targets into Ukraine.");
+    return;
+  }
+
+  for (let i = 0; i < count; i++) {
+    setTimeout(async () => {
+      // получаем случайную точку внутри Украины
+      const targetInside = await getRandomPointInUkraine();
+      if (!targetInside) {
+        console.warn("Failed to find random point in Ukraine for airfield spawn.");
+        return;
+      }
+
+      // используем исходную логику: если тип аэродрома в launchPoints указан как shahed/kalibr/iskander, браcаем его,
+      // иначе по умолчанию shahed
+      const type = airfield.type || 'shahed';
+
+      // Запускаем соответствующий старт (launchDrone теперь возвращает маркер)
+      let marker = null;
+      if (type === 'shahed') {
+        marker = launchDrone(airfield.coords, targetInside);
+      } else if (type === 'kalibr') {
+        marker = launchKalibr(airfield.coords, targetInside);
+      } else if (type === 'iskander') {
+        marker = launchIskander(airfield.coords, targetInside);
+      } else {
+        // fallback на drone
+        marker = launchDrone(airfield.coords, targetInside);
+      }
+
+      // Если launch... вернул маркер — настраиваем флаги, иконку и время старта
+      if (marker) {
+        try {
+          marker._fromAirfield = true;
+          marker._spawnTime = performance.now();
+          marker._isDetected = false;
+          // помечаем и ставим неизвестный значок (если хочешь, используем ICON_UNKNOWN)
+          if (typeof marker.setIcon === 'function') {
+            marker.setIcon(ICON_UNKNOWN);
+          }
+          // если есть _data — можно обнулить модель/название до опознания
+          if (marker._data) {
+            marker._data.model = "Unknown";
+            marker._data.name = "Unidentified";
+          }
+        } catch (err) {
+          console.warn("Failed to tag airfield marker:", err);
+        }
+      }
+    }, i * delayBetween);
+  }
+}
+
+// 4) Пример автоматического триггера: случайный аэродром каждые 25–45 сек
+//    (если хочешь, отключи/измени или привяжи к системе волн)
+setInterval(() => {
+  // 30% шанс — запуск с аэродрома (иначе ничего)
+  if (Math.random() > 0.35) return;
+
+  // выбираем случайный аэродром
+  const airports = launchPoints.filter(p => p.airport);
+  if (!airports || airports.length === 0) return;
+
+  const chosen = airports[Math.floor(Math.random() * airports.length)];
+  // количество от 2 до 5
+  const cnt = 2 + Math.floor(Math.random() * 4);
+  // интервал между пусками 600-1200ms
+  const intervalMs = 600 + Math.floor(Math.random() * 700);
+
+  notifyAirfieldLaunch(chosen, cnt, intervalMs);
+}, 25000 + Math.floor(Math.random() * 20000)); // срабатывает каждые 25-45 секунд (пример)
+
     function move() {
         if (!marker._map) {
             if (map.hasLayer(droneTrail)) map.removeLayer(droneTrail);
