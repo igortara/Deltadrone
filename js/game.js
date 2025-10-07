@@ -1006,3 +1006,51 @@ if (threatType === "iskander") {
     launchDrone(start.coords, target);
 }
 
+function createExplosionEffect(latlng, color = '#ff6600') {
+  const explosion = L.circle(latlng, {
+    radius: 2000,
+    color: color,
+    fillColor: color,
+    fillOpacity: 0.8
+  }).addTo(map);
+
+  let opacity = 0.8;
+  const fade = setInterval(() => {
+    opacity -= 0.05;
+    explosion.setStyle({ fillOpacity: opacity, opacity });
+    if (opacity <= 0) {
+      clearInterval(fade);
+      map.removeLayer(explosion);
+    }
+  }, 50);
+}
+
+function drawMissileTrail(from, to, color = '#ffff00') {
+  const trail = L.polyline([from], { color, weight: 2, opacity: 0.8 }).addTo(map);
+  let progress = 0;
+  const steps = 30;
+  const interval = setInterval(() => {
+    progress++;
+    const lat = from[0] + (to[0] - from[0]) * (progress / steps);
+    const lng = from[1] + (to[1] - from[1]) * (progress / steps);
+    trail.addLatLng([lat, lng]);
+    if (progress >= steps) clearInterval(interval);
+  }, 30);
+  setTimeout(() => map.removeLayer(trail), 2000);
+}
+
+function screenFlash(color = 'rgba(255, 120, 0, 0.2)') {
+  const flash = document.createElement('div');
+  flash.style.position = 'fixed';
+  flash.style.top = '0';
+  flash.style.left = '0';
+  flash.style.width = '100vw';
+  flash.style.height = '100vh';
+  flash.style.background = color;
+  flash.style.zIndex = '5000';
+  flash.style.pointerEvents = 'none';
+  flash.style.transition = 'opacity 0.4s';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.style.opacity = '0', 50);
+  setTimeout(() => flash.remove(), 500);
+}
