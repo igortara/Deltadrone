@@ -10,6 +10,17 @@
   <link rel="stylesheet" href="css/style.css">
 
   <style>
+    .leaflet-marker-icon,
+.leaflet-marker-shadow {
+  transform-origin: center center !important;
+  will-change: unset !important;
+  image-rendering: auto !important;
+}
+
+.leaflet-zoom-animated .leaflet-marker-icon {
+  transform: none !important;
+}
+    
  /* === ОСНОВНЫЙ СТИЛЬ === */
 html, body {
   height: 100%;
