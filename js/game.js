@@ -1054,3 +1054,263 @@ function screenFlash(color = 'rgba(255, 120, 0, 0.2)') {
   setTimeout(() => flash.style.opacity = '0', 50);
   setTimeout(() => flash.remove(), 500);
 }
+
+// ----------------------- Radar Centers: Start -----------------------
+/*
+  Radar centers detect targets automatically, can be upgraded (radius/scan speed),
+  and can engage a detected target by launching an interceptor.
+*/
+
+// Player money (if not defined elsewhere)
+window.playerMoney = window.playerMoney || 500;
+function updateMoneyUI() {
+  const ui = document.getElementById('ui-money') || document.getElementById('player-money');
+  if (ui) ui.textContent = Math.max(0, Math.floor(window.playerMoney));
+}
+
+// Cities where radar centers will be placed (you can customize)
+const RADAR_CITIES = [
+  { name: "Kyiv", coords: [50.4501, 30.5234] },
+  { name: "Kharkiv", coords: [49.9935, 36.2304] },
+  { name: "Odesa", coords: [46.4825, 30.7233] },
+  { name: "Dnipro", coords: [48.4647, 35.0462] }
+];
+
+// Storage for radar centers
+const radarCenters = [];
+
+/**
+ * Создаёт визуальный маркер радарного центра и запускает сканирование
+ * options: { radius, scanSpeed (deg per second), level }
+ */
+function spawnRadarCenter(city, options = {}) {
+  const base = {
+    level: options.level || 1,
+    radius: options.radius || 30000, // meters
+    scanSpeed: options.scanSpeed || 90, // degrees per second (how fast the sector rotates)
+    sweepAngle: options.sweepAngle || 60,
+    costNextLevel: options.costNextLevel || 200
+  };
+
+  const iconHtml = `<div class="radar-center-icon" title="${city.name}"></div>`;
+  const icon = L.divIcon({ className: 'radar-center-divicon', html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14] });
+  const marker = L.marker(city.coords, { icon }).addTo(map);
+  marker._radarState = { ...base, cityName: city.name };
+
+  // Hidden circular zone for detection (used by toggle ranges to show/hide)
+  const circle = L.circle(city.coords, {
+    color: '#00ff0088',
+    fillColor: '#00ff0044',
+    fillOpacity: 0.12,
+    radius: marker._radarState.radius,
+    interactive: false
+  }).addTo(map);
+  // Start hidden if showPpoRanges is false
+  circle.setStyle({ opacity: (typeof showPpoRanges !== 'undefined' && showPpoRanges) ? 0.12 : 0 });
+
+  circle._isRadarRange = true;
+  circle._ownerMarker = marker;
+
+  // Create rotating sector using L.semiCircle (ensure leaflet-semicircle is included)
+  const radarArc = L.semiCircle(city.coords, {
+    radius: marker._radarState.radius,
+    startAngle: 0,
+    stopAngle: marker._radarState.sweepAngle,
+    direction: 0,
+    color: '#00ff66',
+    fillColor: '#00ff6644',
+    fillOpacity: 0.12,
+    weight: 1.2,
+    interactive: false
+  }).addTo(map);
+  // Hide arc if ranges hidden
+  radarArc.setStyle({ opacity: (typeof showPpoRanges !== 'undefined' && showPpoRanges) ? 1 : 0 });
+
+  marker._radarCircle = circle;
+  marker._radarArc = radarArc;
+
+  // scanning state
+  marker._radarState._direction = 0; // degrees
+  marker._radarState._scanning = true;
+
+  // animation loop: rotate arc
+  function rotateRadar() {
+    if (!marker._map) {
+      if (map.hasLayer(radarArc)) map.removeLayer(radarArc);
+      if (map.hasLayer(circle)) map.removeLayer(circle);
+      return;
+    }
+    const st = marker._radarState;
+    st._direction = (st._direction + st.scanSpeed * (1/60)) % 360;
+    radarArc.setDirection(st._direction);
+    // update arc radius/angles if upgraded
+    radarArc.setRadius(st.radius);
+    radarArc.options.stopAngle = st.sweepAngle;
+    circle.setRadius(st.radius);
+
+    requestAnimationFrame(rotateRadar);
+  }
+  rotateRadar();
+
+  // Click opens small HUD for upgrades/engage
+  marker.on('click', (e) => {
+    openRadarHUD(marker);
+    L.DomEvent.stopPropagation(e);
+  });
+
+  // store
+  radarCenters.push(marker);
+  return marker;
+}
+
+// Auto-detect targets inside arc (called periodically)
+function detectTargetsByRadarArc(arcMarker) {
+  if (!arcMarker || !arcMarker._radarArc || !arcMarker._radarState) return;
+  const arc = arcMarker._radarArc;
+  const st = arcMarker._radarState;
+  const center = arc.getLatLng();
+  const direction = st._direction || 0;
+  const sweep = st.sweepAngle || 60;
+  const radius = st.radius;
+
+  // iterate markers (threats) on map
+  map.eachLayer(layer => {
+    if (!(layer instanceof L.Marker)) return;
+    if (!(layer._isShahed || layer._isIskander || layer._isKalibr)) return;
+    if (!layer._map) return;
+
+    const pos = layer.getLatLng();
+    const dist = map.distance(pos, center);
+    if (dist > radius) return;
+
+    // compute angle from center to target (deg)
+    const dx = pos.lng - center.lng;
+    const dy = pos.lat - center.lat;
+    const angle = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+    const rel = (angle - direction + 360) % 360; // relative to radar direction
+
+    if (rel <= sweep) {
+      // detected by this radar
+      if (!layer._isDetected) {
+        layer._isDetected = true;
+        updateMarkerVisibility(layer);
+        showNotification({
+          image: 'images/radar.png',
+          title: `Radar @ ${arcMarker._radarState.cityName}: target detected`,
+          description: `${layer._data?.model || 'Unknown'} at ${pos.lat.toFixed(2)}, ${pos.lng.toFixed(2)}`,
+          duration: 2500
+        });
+      }
+    }
+  });
+}
+
+// Periodic scan across all radar centers
+setInterval(() => {
+  radarCenters.forEach(r => detectTargetsByRadarArc(r));
+}, 1000); // каждую секунду
+
+// HUD panel for radar (upgrade / show info / engage)
+let openRadarPanel = null;
+function openRadarHUD(marker) {
+  // close existing
+  if (openRadarPanel) openRadarPanel.remove();
+
+  const st = marker._radarState;
+  const screen = map.latLngToContainerPoint(marker.getLatLng());
+  const panel = document.createElement('div');
+  panel.className = 'radar-hud';
+  panel.style.left = `${screen.x + 16}px`;
+  panel.style.top = `${screen.y - 8}px`;
+  panel.innerHTML = `
+    <div style="font-weight:700;margin-bottom:6px">${st.cityName} Radar (Lv ${st.level})</div>
+    <div style="font-size:13px">Radius: ${Math.round(st.radius)} m</div>
+    <div style="font-size:13px">Scan speed: ${Math.round(st.scanSpeed)}°/s</div>
+    <div style="font-size:13px;margin-bottom:8px">Next upgrade: ${st.costNextLevel} 💰</div>
+    <div style="display:flex;gap:6px">
+      <button id="radar-upgrade-btn" class="ui-btn small">Upgrade</button>
+      <button id="radar-toggle-range-btn" class="ui-btn small">Toggle Range</button>
+      <button id="radar-engage-btn" class="ui-btn small">Engage</button>
+    </div>
+  `;
+  document.body.appendChild(panel);
+  openRadarPanel = panel;
+
+  // handlers
+  document.getElementById('radar-upgrade-btn').onclick = () => {
+    if (window.playerMoney >= st.costNextLevel) {
+      window.playerMoney -= st.costNextLevel;
+      st.level += 1;
+      st.radius = Math.round(st.radius * 1.35);
+      st.scanSpeed = Math.min(400, st.scanSpeed * 1.15);
+      st.costNextLevel = Math.round(st.costNextLevel * 1.8);
+      // update visuals
+      marker._radarCircle.setRadius(st.radius);
+      marker._radarArc.setRadius(st.radius);
+      updateMoneyUI();
+      panel.querySelector('div:nth-child(1)');
+      panel.querySelector('div:nth-child(2)').textContent = `Radius: ${Math.round(st.radius)} m`;
+      panel.querySelector('div:nth-child(3)').textContent = `Scan speed: ${Math.round(st.scanSpeed)}°/s`;
+      panel.querySelector('div:nth-child(4)').textContent = `Next upgrade: ${st.costNextLevel} 💰`;
+      showNotification({ title: `${st.cityName} Radar upgraded!`, duration: 1800 });
+    } else {
+      showNotification({ title: 'Not enough funds', description: `Need ${st.costNextLevel} 💰`, duration: 1600 });
+    }
+  };
+
+  document.getElementById('radar-toggle-range-btn').onclick = () => {
+    // toggle the visibility of this radar's circle/arc (independent of global toggle)
+    const cur = marker._radarCircle.options.opacity > 0;
+    marker._radarCircle.setStyle({ opacity: cur ? 0 : 0.12, fillOpacity: cur ? 0 : 0.12 });
+    marker._radarArc.setStyle({ opacity: cur ? 0 : 1 });
+  };
+
+  document.getElementById('radar-engage-btn').onclick = () => {
+    // find nearest detected target
+    let nearest = null;
+    const center = marker.getLatLng();
+    map.eachLayer(layer => {
+      if (!(layer instanceof L.Marker)) return;
+      if (!(layer._isDetected && (layer._isShahed || layer._isKalibr || layer._isIskander))) return;
+      const dist = map.distance(center, layer.getLatLng());
+      if (dist <= marker._radarState.radius) {
+        if (!nearest || dist < nearest.dist) nearest = { layer, dist };
+      }
+    });
+    if (nearest) {
+      // launch interceptor from radar center
+      const from = [center.lat, center.lng];
+      const to = [nearest.layer.getLatLng().lat, nearest.layer.getLatLng().lng];
+      launchInterceptor(from, to);
+      showNotification({ title: `Interceptor launched from ${marker._radarState.cityName}`, duration: 1800 });
+    } else {
+      showNotification({ title: 'No detected targets in range', duration: 1400 });
+    }
+  };
+
+  // close panel if click outside
+  setTimeout(() => {
+    document.addEventListener('mousedown', closeRadarPanelOnClickOutside, { once: true });
+  }, 10);
+}
+
+function closeRadarPanelOnClickOutside(e) {
+  if (!openRadarPanel) return;
+  if (!openRadarPanel.contains(e.target)) {
+    openRadarPanel.remove();
+    openRadarPanel = null;
+  }
+}
+
+// spawn radars on load (after map and countries loaded)
+function spawnAllRadars() {
+  RADAR_CITIES.forEach(city => {
+    spawnRadarCenter(city, { radius: 25000 + Math.random() * 15000, scanSpeed: 80 + Math.random() * 60, sweepAngle: 60, costNextLevel: 200 });
+  });
+}
+
+// call once UKR geojson loaded (you already call spawnThreat() after loading geojson).
+// If you want to spawn radars immediately after map load, call spawnAllRadars() there.
+spawnAllRadars();
+updateMoneyUI();
+// ----------------------- Radar Centers: End -----------------------
