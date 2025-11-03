@@ -1435,3 +1435,26 @@ map.on('zoomend', () => {
   shahedIcon.options.iconSize = [size, size];
   shahedIcon.options.iconAnchor = [size / 2, size / 2];
 });
+
+// === HUD обновление DeltaDrone ===
+
+// Функция, которая синхронизирует нижний HUD с верхними показателями
+function updateHud() {
+  const pvo = document.getElementById('ui-pvo');
+  const money = document.getElementById('ui-money');
+  const drones = document.getElementById('ui-drones');
+
+  if (!pvo || !money || !drones) return;
+
+  // Обновляем нижние значения
+  const hudPvo = document.getElementById('hud-pvo');
+  const hudMoney = document.getElementById('hud-money');
+  const hudDrones = document.getElementById('hud-drones');
+
+  if (hudPvo) hudPvo.textContent = pvo.textContent;
+  if (hudMoney) hudMoney.textContent = money.textContent;
+  if (hudDrones) hudDrones.textContent = drones.textContent;
+}
+
+// Запускаем обновление каждые полсекунды
+setInterval(updateHud, 500);
