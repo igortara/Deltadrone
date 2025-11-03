@@ -333,12 +333,36 @@ document.addEventListener("DOMContentLoaded", () => {
   <!-- ===== Карта ===== -->
   <div id="mapid"></div>
 
-  <!-- ===== Стартовое меню DeltaDrone ===== -->
+<!-- ===== Стартовое меню DeltaDrone ===== -->
 <div id="start-menu">
   <div class="menu-content">
     <h1 class="logo">Δ DeltaDrone</h1>
     <p class="tagline">Air Defense Command Interface</p>
-    <button id="start-btn">Начать миссию</button>
+
+    <div class="menu-buttons">
+      <button id="start-btn">🎮 Начать миссию</button>
+      <button id="settings-btn">⚙️ Настройки</button>
+      <button id="exit-btn">❌ Выход</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Окно настроек ===== -->
+<div id="settings-panel" class="hidden">
+  <div class="settings-content">
+    <h2>⚙️ Настройки</h2>
+    <label>
+      <input type="checkbox" id="sound-toggle" checked> Звук
+    </label>
+    <label>
+      Сложность:
+      <select id="difficulty">
+        <option value="easy">Лёгкая</option>
+        <option value="normal" selected>Нормальная</option>
+        <option value="hard">Сложная</option>
+      </select>
+    </label>
+    <button id="back-btn">← Назад</button>
   </div>
 </div>
 
@@ -426,5 +450,38 @@ document.addEventListener("DOMContentLoaded", () => {
       if (window.spawnShahed) spawnShahed();
     };
   </script>
+
+  <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const startMenu = document.getElementById("start-menu");
+  const startBtn = document.getElementById("start-btn");
+  const settingsBtn = document.getElementById("settings-btn");
+  const exitBtn = document.getElementById("exit-btn");
+  const settingsPanel = document.getElementById("settings-panel");
+  const backBtn = document.getElementById("back-btn");
+
+  // Старт игры
+  startBtn.addEventListener("click", () => {
+    startMenu.classList.add("hidden");
+    if (typeof initGame === "function") initGame();
+    if (typeof startSpawning === "function") startSpawning();
+  });
+
+  // Настройки
+  settingsBtn.addEventListener("click", () => {
+    settingsPanel.classList.remove("hidden");
+  });
+
+  backBtn.addEventListener("click", () => {
+    settingsPanel.classList.add("hidden");
+  });
+
+  // Выход
+  exitBtn.addEventListener("click", () => {
+    alert("Сеанс DeltaDrone завершён.");
+    window.close(); // может не сработать в браузере — можно просто скрыть меню
+  });
+});
+</script>
 
 </body>
