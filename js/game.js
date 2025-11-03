@@ -1470,3 +1470,45 @@ document.getElementById('start-btn').addEventListener('click', () => {
   // или просто активировать спавн целей / карту
   if (typeof startSpawning === 'function') startSpawning();
 });
+
+function startSpawning() {
+  setInterval(() => {
+    const roll = Math.random();
+
+    if (roll < 0.5) {
+      spawnShahed();
+    } else if (roll < 0.8) {
+      spawnIskander();
+    } else {
+      spawnKalibr(); // 💥 гарантированно вызывается
+      console.log("🚀 Kalibr launched");
+    }
+  }, 6000); // каждые 6 секунд
+}
+
+function spawnKalibr() {
+  const spawnPoint = getRandomEdgePoint(); // функция спавна на краю карты
+  const targetPoint = getRandomTargetPoint();
+
+  const kalibrIcon = L.icon({
+    iconUrl: "images/kalibr.png", // проверь, что этот файл реально есть
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
+  });
+
+  const marker = L.marker(spawnPoint, { icon: kalibrIcon }).addTo(map);
+
+  // Движение цели
+  moveTarget(marker, targetPoint, "kalibr");
+
+  // Инфо-подсказка
+  marker.bindTooltip(
+    `<b>3M-54 Kalibr</b><br>
+     💨 Скорость: 850 км/ч<br>
+     ⬆️ Высота: 100 м<br>
+     ⚠️ Опасность: Средняя`,
+    { direction: "top", offset: [0, -20], className: "target-tooltip" }
+  );
+
+  console.log("🟥 Kalibr missile spawned");
+}
