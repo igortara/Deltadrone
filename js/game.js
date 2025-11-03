@@ -1458,3 +1458,15 @@ function updateHud() {
 
 // Запускаем обновление каждые полсекунды
 setInterval(updateHud, 500);
+
+// ===== Логика стартового меню =====
+document.getElementById('start-btn').addEventListener('click', () => {
+  const menu = document.getElementById('start-menu');
+  menu.classList.add('hidden'); // плавно скрывает меню
+
+  // если у тебя есть функция initGame() — можно запустить её тут:
+  if (typeof initGame === 'function') initGame();
+
+  // или просто активировать спавн целей / карту
+  if (typeof startSpawning === 'function') startSpawning();
+});
