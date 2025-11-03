@@ -239,6 +239,41 @@ html, body {
   }
 }
 
+    /* ===== Исправление выравнивания метрик в верхней панели ===== */
+#ui-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  font-size: 14px;
+  color: #cdd3da;
+  height: 56px; /* выравнивает высоту со всей панелью */
+  line-height: 1; /* устраняет “прыжок” из-за emoji */
+}
+
+#ui-center .metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  text-transform: none;
+}
+
+/* Чуть выровняем эмодзи и цифры */
+#ui-center .metric span {
+  display: inline-block;
+  transform: translateY(1px);
+}
+
+/* Немного поправим spacing, чтобы ничего не съезжало при масштабировании */
+@media (max-width: 900px) {
+  #ui-center {
+    gap: 18px;
+    font-size: 13px;
+  }
+}
+
   </style>
 </head>
 <body>
