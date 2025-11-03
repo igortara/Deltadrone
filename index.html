@@ -298,6 +298,26 @@ html, body {
   </style>
 </head>
 <body>
+  
+  <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const startMenu = document.getElementById("start-menu");
+  const startBtn = document.getElementById("start-btn");
+
+  // Безопасная проверка, что элемент существует
+  if (startBtn) {
+    startBtn.addEventListener("click", () => {
+      startMenu.classList.add("hidden"); // плавно скрываем меню
+      console.log("🚀 Миссия начата");
+
+      // Здесь можно запустить игру / спавн
+      if (typeof initGame === "function") initGame();
+      if (typeof startSpawning === "function") startSpawning();
+    });
+  }
+});
+</script>
+
   <!-- ===== Нижний HUD DeltaDrone ===== -->
 <div id="delta-hud">
   <div class="hud-item">🛡️ Air Defense: <span id="hud-pvo">3</span></div>
