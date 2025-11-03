@@ -22,43 +22,55 @@
 }
     
  /* === ОСНОВНЫЙ СТИЛЬ === */
+h/* === DeltaDrone Minimal Tactical UI === */
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  background: #0b0f15;
+  color: #d7dee9;
   font-family: 'Roboto Mono', monospace;
-  background-color: #000;
+  overflow: hidden;
 }
 
-/* ===== Верхняя панель DELTA EYE ===== */
+/* ===== Верхняя панель ===== */
 #delta-ui {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: 64px;
-  background: rgba(20, 22, 27, 0.95);
-  border-bottom: 1px solid #2a2f39;
-  color: #e0e3ea;
+  height: 56px;
+  background: rgba(18, 24, 31, 0.95);
+  border-bottom: 1px solid rgba(60, 70, 80, 0.5);
+  color: #cfd6df;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 24px;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   z-index: 4000;
+}
+
+#ui-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 #ui-left .logo {
   font-size: 20px;
   font-weight: 600;
-  color: #8ab4f8;
+  color: #4de29b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
+
 #ui-left .status {
-  font-size: 13px;
-  color: #a0a7b3;
+  font-size: 12px;
+  color: #7c8694;
 }
+
 .status .ok {
   color: #66ff99;
   font-weight: 600;
@@ -66,58 +78,76 @@ html, body {
 
 #ui-center {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  gap: 28px;
   font-size: 14px;
-  color: #c8ccd7;
+  color: #cdd3da;
 }
 
-/* ===== Кнопка магазина ===== */
+#ui-center .metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ===== Боковое меню ===== */
 #side-panel {
   position: fixed;
-  top: 72px;
+  top: 70px;
   right: 0;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 #shop-btn {
-  width: 52px;
-  height: 52px;
-  background: #252B36;
-  color: #fff;
-  border: none;
+  width: 54px;
+  height: 54px;
+  background: #141a22;
+  color: #9eb8d0;
+  border: 1px solid #232b36;
   border-radius: 12px 0 0 12px;
   cursor: pointer;
   font-size: 22px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-  transition: background 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  transition: all 0.25s ease;
 }
 #shop-btn:hover {
-  background: #2f3542;
+  background: #1b232e;
+  color: #00ffa2;
 }
 
-/* ===== Панель магазина ===== */
 #shop-panel {
   display: none;
   position: fixed;
-  top: 64px;
+  top: 56px;
   right: 0;
   width: 340px;
-  height: calc(100vh - 64px);
-  background: #232837;
-  color: #fff;
+  height: calc(100vh - 56px);
+  background: rgba(18, 24, 31, 0.98);
+  color: #e0e0e0;
   overflow-y: auto;
-  box-shadow: -2px 0 16px rgba(0,0,0,0.18);
-  z-index: 2000;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.4);
+  z-index: 3000;
+  border-left: 1px solid #222a33;
+  animation: slideIn 0.3s ease forwards;
 }
-#shop-panel.open { display: block; }
+#shop-panel.open {
+  display: block;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
 
 .shop-section {
-  padding: 16px;
+  padding: 16px 18px;
   border-bottom: 1px solid #2f3542;
 }
 .shop-section h4 {
   margin: 0 0 8px 0;
+  color: #00ffa2;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 .shop-item {
   display: flex;
@@ -126,94 +156,88 @@ html, body {
   margin-bottom: 10px;
 }
 .shop-item img {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 6px;
+  border: 1px solid #1c232e;
 }
 .shop-item .info {
   flex: 1;
 }
 .shop-item .info strong {
-  font-size: 15px;
+  font-size: 14px;
+  color: #d4dce7;
 }
 .shop-item .price {
-  color: #8ab4f8;
+  color: #4de29b;
   font-size: 13px;
 }
 .shop-item button {
-  background: #252b36;
-  border: 1px solid #353b48;
-  color: #fff;
-  padding: 5px 10px;
+  background: #141a22;
+  border: 1px solid #28313d;
+  color: #cfd6df;
+  padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
+  transition: all 0.2s;
 }
 .shop-item button:hover {
-  background: #2f3542;
+  background: #1f2833;
+  color: #00ffa2;
+  border-color: #00ffa2;
 }
 
 /* ===== Нижняя информационная панель ===== */
 #delta-panel {
   position: fixed;
-  bottom: 16px;
-  left: 16px;
-  width: 90vw;
-  max-width: 340px;
-  background: rgba(37,43,54,0.97);
-  color: #e0e0e0;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-  font-size: 14px;
-  padding: 10px;
-  z-index: 2000;
+  bottom: 18px;
+  left: 18px;
+  width: 300px;
+  background: rgba(16, 20, 26, 0.94);
+  color: #b8c1cc;
+  border: 1px solid #242c36;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  font-size: 13px;
+  padding: 12px;
+  z-index: 2500;
+}
+#delta-panel strong {
+  color: #00ffa2;
+}
+#delta-panel div {
+  margin-bottom: 4px;
 }
 
-/* ===== 📱 Мобильная адаптация ===== */
+/* ===== Мобильная адаптация ===== */
 @media (max-width: 768px) {
   #delta-ui {
     flex-direction: column;
     align-items: flex-start;
     height: auto;
-    padding: 10px 14px;
+    padding: 10px 16px;
     gap: 6px;
   }
 
-  #ui-left .logo {
-    font-size: 16px;
-  }
-
   #ui-center {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px 10px;
+    gap: 10px;
+    flex-wrap: wrap;
     font-size: 13px;
   }
 
-  #shop-btn {
-    width: 46px;
-    height: 46px;
-    font-size: 20px;
-  }
-
   #shop-panel {
-    width: 100vw;
+    width: 100%;
     top: 56px;
-    left: 0;
-    right: 0;
     border-radius: 0;
-  }
-
-  .shop-item img {
-    width: 42px;
-    height: 42px;
   }
 
   #delta-panel {
     width: 92vw;
     left: 4vw;
-    font-size: 13px;
+    font-size: 12px;
   }
+}
 
   </style>
 </head>
