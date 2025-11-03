@@ -1186,6 +1186,14 @@ function updateMoneyUI() {
   if (ui) ui.textContent = Math.max(0, Math.floor(window.playerMoney));
 }
 
+function updateHud() {
+  document.getElementById('hud-pvo').textContent = document.getElementById('ui-pvo').textContent;
+  document.getElementById('hud-money').textContent = document.getElementById('ui-money').textContent;
+  document.getElementById('hud-drones').textContent = document.getElementById('ui-drones').textContent;
+}
+
+setInterval(updateHud, 500);
+
 // Cities where radar centers will be placed (you can customize)
 const RADAR_CITIES = [
   { name: "Kyiv", coords: [50.4501, 30.5234] },
