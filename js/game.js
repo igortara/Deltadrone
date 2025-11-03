@@ -596,101 +596,72 @@ function spawnPPO(name, coords) {
 
 // === Детерминированный перехват — замените старую функцию tryShootDownThreat ===
 function tryShootDownThreat(threatMarker, ppoCircle) {
-    // не даём многократных попыток для одного маркера одновременно
     if (threatMarker._ppoTargeting || !threatMarker._map) return;
 
     const threatPos = threatMarker.getLatLng();
     const ppoPos = ppoCircle.getLatLng();
-    const dist = map.distance(threatPos, ppoPos); // в метрах
+    const dist = map.distance(threatPos, ppoPos);
     const ppoType = ppoCircle._ppoType;
 
-    // если вне радиуса — ничего не делаем
     if (dist > ppoCircle.getRadius()) return;
-
-    // Помечаем, что ППО занято (чтобы не запускать ещё одну попытку)
     threatMarker._ppoTargeting = true;
 
-    // Определяем возможность перехвата детерминированно по типу цели и возможностям ППО
     let canIntercept = false;
     let targetType = "Shahed";
 
     if (threatMarker._isIskander) {
         targetType = "Iskander";
-        // для Искандера требуется флаг canInterceptIskander у типа ППО
         canIntercept = !!ppoType.canInterceptIskander;
     } else if (threatMarker._isShahed) {
         targetType = "Shahed";
-        // Шахеды перехватываются любым ППО в радиусе (решение дизайна)
         canIntercept = true;
     } else if (threatMarker._isKalibr) {
         targetType = "Kalibr";
-        // Для Калибра — считаем, что крупные системы (Patriot/SAMP/T/S-300/NASAMS) справляются
         const good = ["Patriot", "SAMP/T", "S-300", "NASAMS"];
         canIntercept = good.includes(ppoType.name);
     } else {
-        // По умолчанию — пробуем перехватить (safety)
         canIntercept = true;
     }
 
     if (!canIntercept) {
-        // Сообщаем, что эта ППО не способна на перехват
         showNotification({
             image: ppoType.image,
             title: `${ppoType.name} cannot intercept ${targetType}!`,
             description: `${targetType} flew past.`,
-            duration: 2200
+            duration: 1800
         });
-        // освобождаем флаг (через небольшой timeout, чтобы дать "анимацию" попытки)
-        setTimeout(() => { threatMarker._ppoTargeting = false; }, 600);
+        threatMarker._ppoTargeting = false;
         return;
     }
 
-    // Если можем перехватить — запускаем перехватчик и гарантированно удаляем цель после полёта
+    // Пуск перехватчика
     showNotification({
         image: ppoType.image,
         title: `${ppoType.name} engaging ${targetType}`,
-        description: `Interceptor launched against ${targetType}.`,
-        duration: 1800
+        description: `Interceptor launched.`,
+        duration: 1000
     });
 
-    // точка запуска (координаты ППО) и точка цели
     const from = [ppoPos.lat, ppoPos.lng];
     const to = [threatPos.lat, threatPos.lng];
-
-    // визуальный запуск перехватчика (функция уже есть в проекте)
     launchInterceptor(from, to, ppoType.image || "images/interceptor.png");
 
-    // Рассчитываем время «полёта» перехватчика (в ms). Скорость — регулируемый параметр:
-    // скорость в м/с (чем больше — быстрее удаление цели)
-    const interceptorSpeed = 800; // м/с — можно уменьшить/увеличить для баланса
-    const travelTimeMs = Math.max(300, (dist / interceptorSpeed) * 1000);
-
-    // После того как перехватчик «долетел», гарантировано удаляем цель и создаём эффект
+    // 💥 Мгновенное сбитие через короткое время (1–1.5 сек)
     setTimeout(() => {
-        if (!threatMarker._map) {
-            threatMarker._ppoTargeting = false;
-            return;
-        }
-
-        // Эффект взрыва и уведомление
+        if (!threatMarker._map) return;
         createExplosionCircle([threatPos.lat, threatPos.lng], 800, '#ffff00');
         showNotification({
             image: ppoType.image,
             title: `${ppoType.name} shot down ${targetType}!`,
-            description: `${targetType} intercepted.`,
-            duration: 2000
+            description: `${targetType} destroyed.`,
+            duration: 1500
         });
 
-        // Удаляем цель с карты
-        try {
-            if (threatMarker._isShahed && dronesEnteredUkraine > 0) dronesEnteredUkraine--;
-        } catch (e) { /* silent */ }
-
+        if (threatMarker._isShahed && dronesEnteredUkraine > 0) dronesEnteredUkraine--;
         if (map.hasLayer(threatMarker)) map.removeLayer(threatMarker);
 
-        // освобождаем флаг (на всякий случай)
         threatMarker._ppoTargeting = false;
-    }, travelTimeMs + 120); // небольшой запас
+    }, 1200); // время “долёта” ракеты — можно регулировать
 }
 
 function getDronesEnteredUkraine() {
